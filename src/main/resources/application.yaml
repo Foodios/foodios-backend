@@ -1,0 +1,48 @@
+spring:
+  application:
+    name: foodios-backend
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/foodios}
+    username: ${SPRING_DATASOURCE_USERNAME:routex}
+    password: ${SPRING_DATASOURCE_PASSWORD:routex@2026}
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+
+management:
+  endpoint:
+    health:
+      probes:
+        enabled: true
+  health:
+    livenessstate:
+      enabled: true
+    readinessstate:
+      enabled: true
+
+logging:
+  level:
+    org.springframework.security: DEBUG
+    org.springframework.kafka: INFO
+    org.apache.kafka: WARN
+
+notification:
+  email:
+    provider: ${NOTIFICATION_EMAIL_PROVIDER:sendgrid} # sendgrid
+    sendgrid:
+      baseUrl: ${BASE_URL:http://localhost:5173/}
+      api-key: ${SENDGRID_API_KEY}
+      from-email: ${SENDGRID_FROM_EMAIL:simon@routex-go.com}
+      from-name: ${SENDGRID_FROM_NAME:Foodio Administration}
+      verify-subject: ${SENDGRID_VERIFY_SUBJECT:Registration Form - Verify your Email}
+
+identity:
+  jwt:
+    # Must be at least 32 chars for HS256. Override in env for real deployments.
+    secret: ${JWT_SECRET:change-me-change-me-change-me-change-me}
+    issuer: ${JWT_ISSUER:foodios}
+    audience: ${JWT_AUDIENCE:identity-security}
