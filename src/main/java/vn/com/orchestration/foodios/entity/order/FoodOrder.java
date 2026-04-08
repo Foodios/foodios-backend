@@ -12,8 +12,6 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
-import java.math.BigDecimal;
-import java.time.Instant;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -23,6 +21,9 @@ import vn.com.orchestration.foodios.entity.common.AddressSnapshot;
 import vn.com.orchestration.foodios.entity.common.BaseEntity;
 import vn.com.orchestration.foodios.entity.merchant.Store;
 import vn.com.orchestration.foodios.entity.user.User;
+
+import java.math.BigDecimal;
+import java.time.Instant;
 
 @Getter
 @Setter

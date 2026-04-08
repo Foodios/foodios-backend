@@ -1,7 +1,7 @@
 package vn.com.orchestration.foodios.service.merchant;
 
-import vn.com.orchestration.foodios.dto.merchant.ApproveMerchantApplicationRequest;
 import vn.com.orchestration.foodios.dto.common.BaseRequest;
+import vn.com.orchestration.foodios.dto.merchant.ApproveMerchantApplicationRequest;
 import vn.com.orchestration.foodios.dto.merchant.CreateMerchantRequest;
 import vn.com.orchestration.foodios.dto.merchant.CreateMerchantResponse;
 import vn.com.orchestration.foodios.dto.merchant.GetMerchantApplicationFormDetailResponse;

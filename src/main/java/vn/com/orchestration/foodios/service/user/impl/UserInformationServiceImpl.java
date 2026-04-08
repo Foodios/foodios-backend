@@ -10,7 +10,6 @@ import vn.com.orchestration.foodios.dto.user.UpdateProfileResponse;
 import vn.com.orchestration.foodios.entity.loyalty.CustomerMembership;
 import vn.com.orchestration.foodios.entity.loyalty.MembershipTier;
 import vn.com.orchestration.foodios.entity.user.Authority;
-import vn.com.orchestration.foodios.entity.user.Role;
 import vn.com.orchestration.foodios.entity.user.User;
 import vn.com.orchestration.foodios.entity.user.UserRole;
 import vn.com.orchestration.foodios.entity.user.UserStatus;
@@ -25,7 +24,6 @@ import vn.com.orchestration.foodios.service.user.UserInformationService;
 import vn.com.orchestration.foodios.utils.ApiResultFactory;
 import vn.com.orchestration.foodios.utils.ExceptionUtils;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;

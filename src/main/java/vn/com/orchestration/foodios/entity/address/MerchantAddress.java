@@ -9,10 +9,8 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import lombok.ToString;
 import lombok.experimental.SuperBuilder;
 import vn.com.orchestration.foodios.entity.merchant.Merchant;
-import vn.com.orchestration.foodios.entity.user.User;
 
 @Getter
 @Setter

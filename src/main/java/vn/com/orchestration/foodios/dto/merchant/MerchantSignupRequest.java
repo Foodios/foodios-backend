@@ -11,8 +11,6 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.SuperBuilder;
 import vn.com.orchestration.foodios.dto.common.BaseRequest;
-import vn.com.orchestration.foodios.entity.address.MerchantAddress;
-import vn.com.orchestration.foodios.entity.merchant.MerchantPayout;
 
 @Getter
 @Setter

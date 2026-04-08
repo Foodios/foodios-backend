@@ -8,10 +8,6 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
-import java.math.BigDecimal;
-import java.time.Instant;
-import java.time.OffsetDateTime;
-
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
@@ -21,6 +17,10 @@ import lombok.ToString;
 import lombok.experimental.SuperBuilder;
 import vn.com.orchestration.foodios.entity.common.BaseEntity;
 import vn.com.orchestration.foodios.entity.user.User;
+
+import java.math.BigDecimal;
+import java.time.Instant;
+import java.time.OffsetDateTime;
 
 @Getter
 @Setter

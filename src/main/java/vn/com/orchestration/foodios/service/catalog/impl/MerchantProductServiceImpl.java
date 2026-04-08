@@ -36,7 +36,6 @@ import static vn.com.orchestration.foodios.constant.ErrorConstant.DUPLICATE_ERRO
 import static vn.com.orchestration.foodios.constant.ErrorConstant.INVALID_INPUT_ERROR;
 import static vn.com.orchestration.foodios.constant.ErrorConstant.MERCHANT_ACCESS_DENIED_MESSAGE;
 import static vn.com.orchestration.foodios.constant.ErrorConstant.PRODUCT_SKU_EXISTS_MESSAGE;
-import static vn.com.orchestration.foodios.constant.ErrorConstant.PRODUCT_SLUG_EXISTS_MESSAGE;
 import static vn.com.orchestration.foodios.constant.ErrorConstant.RECORD_NOT_FOUND;
 import static vn.com.orchestration.foodios.constant.ErrorConstant.STORE_NOT_FOUND_MESSAGE;
 import static vn.com.orchestration.foodios.constant.ErrorConstant.SUCCESS_CODE;

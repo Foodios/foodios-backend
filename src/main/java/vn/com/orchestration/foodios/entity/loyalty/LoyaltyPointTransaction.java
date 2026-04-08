@@ -8,7 +8,6 @@ import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
-import java.time.Instant;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -16,6 +15,8 @@ import lombok.Setter;
 import lombok.ToString;
 import vn.com.orchestration.foodios.entity.common.BaseEntity;
 import vn.com.orchestration.foodios.entity.order.FoodOrder;
+
+import java.time.Instant;
 
 @Getter
 @Setter

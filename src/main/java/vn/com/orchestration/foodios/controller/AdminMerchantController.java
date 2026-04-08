@@ -26,10 +26,10 @@ import vn.com.orchestration.foodios.utils.HttpUtils;
 import java.util.UUID;
 
 import static vn.com.orchestration.foodios.constant.ApiConstant.ADMIN_PATH;
-import static vn.com.orchestration.foodios.constant.ApiConstant.APPROVE_PATH;
-import static vn.com.orchestration.foodios.constant.ApiConstant.APPLICATIONS_PATH;
 import static vn.com.orchestration.foodios.constant.ApiConstant.API_PATH;
 import static vn.com.orchestration.foodios.constant.ApiConstant.API_VERSION;
+import static vn.com.orchestration.foodios.constant.ApiConstant.APPLICATIONS_PATH;
+import static vn.com.orchestration.foodios.constant.ApiConstant.APPROVE_PATH;
 import static vn.com.orchestration.foodios.constant.ApiConstant.MERCHANTS_PATH;
 import static vn.com.orchestration.foodios.constant.ApiConstant.REJECT_PATH;
 

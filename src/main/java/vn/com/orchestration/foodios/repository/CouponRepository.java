@@ -1,13 +1,14 @@
 package vn.com.orchestration.foodios.repository;
 
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import vn.com.orchestration.foodios.entity.promotion.Coupon;
 import vn.com.orchestration.foodios.entity.promotion.CouponStatus;
+
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 
 public interface CouponRepository extends JpaRepository<Coupon, UUID> {
   Optional<Coupon> findByCodeIgnoreCase(String code);

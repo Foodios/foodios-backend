@@ -1,10 +1,10 @@
 package vn.com.orchestration.foodios.service.auth.impl;
 
 import org.springframework.stereotype.Service;
+import vn.com.orchestration.foodios.entity.user.Authority;
+import vn.com.orchestration.foodios.entity.user.Role;
 import vn.com.orchestration.foodios.entity.user.User;
 import vn.com.orchestration.foodios.entity.user.UserRole;
-import vn.com.orchestration.foodios.entity.user.Role;
-import vn.com.orchestration.foodios.entity.user.Authority;
 import vn.com.orchestration.foodios.repository.UserRoleRepository;
 import vn.com.orchestration.foodios.service.auth.UserAuthorizationService;
 

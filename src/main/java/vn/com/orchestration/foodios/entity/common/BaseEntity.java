@@ -15,7 +15,6 @@ import org.hibernate.annotations.UpdateTimestamp;
 import org.hibernate.annotations.UuidGenerator;
 import org.hibernate.proxy.HibernateProxy;
 
-import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.util.Objects;
 import java.util.UUID;
