@@ -7,11 +7,19 @@ spring:
     password: ${SPRING_DATASOURCE_PASSWORD:routex@2026}
     driver-class-name: org.postgresql.Driver
 
+  jackson:
+    mapper:
+      sort-properties-alphabetically: false
+
   jpa:
     hibernate:
       ddl-auto: update
     show-sql: false
     database-platform: org.hibernate.dialect.PostgreSQLDialect
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 10MB
 
 management:
   endpoint:
@@ -46,3 +54,11 @@ identity:
     secret: ${JWT_SECRET:change-me-change-me-change-me-change-me}
     issuer: ${JWT_ISSUER:foodios}
     audience: ${JWT_AUDIENCE:identity-security}
+
+media:
+  cloudinary:
+    cloud-name: ${CLOUDINARY_CLOUD_NAME:difqcci0j}
+    api-key: ${CLOUDINARY_API_KEY:478878615354358}
+    api-secret: ${CLOUDINARY_API_SECRET:EpU_ybF0PBin-qKQ6gDgzPHPEMc}
+    default-folder: ${CLOUDINARY_DEFAULT_FOLDER:foodios/}
+    secure: ${CLOUDINARY_SECURE:true}

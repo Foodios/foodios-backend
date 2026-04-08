@@ -1,5 +1,6 @@
 package vn.com.orchestration.foodios.dto.auth;
 
+import java.time.OffsetDateTime;
 import java.util.UUID;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -25,6 +26,8 @@ public class LoginResponse extends BaseResponse<LoginResponse.LoginResponseData>
   public static class LoginResponseData {
     private String accessToken;
     private String refreshToken;
+    private OffsetDateTime accessTokenExpiredAt;
+    private OffsetDateTime refreshTokenExpiredAt;
     private UUID userId;
     private String email;
     private Set<String> roles;

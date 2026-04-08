@@ -11,6 +11,7 @@ public interface JwtService {
     String CLAIM_TYPE = "type"; // new spec
     String CLAIM_TOKEN_TYPE = "tokenType"; // legacy spec
     String CLAIM_EMAIL = "email";
+    String CLAIM_USERNAME = "username";
     String CLAIM_ROLES = "roles";
     String CLAIM_AUTHORITIES = "authorities";
 
@@ -31,5 +32,6 @@ public interface JwtService {
     OffsetDateTime extractExpiration(String token);
 
     boolean isTokenValid(String token);
-}
 
+    boolean isRefreshToken(String token);
+}

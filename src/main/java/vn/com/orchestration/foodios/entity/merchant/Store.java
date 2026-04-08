@@ -8,24 +8,32 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
+import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
+import java.time.LocalTime;
+import lombok.Builder;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
+import lombok.experimental.SuperBuilder;
 import vn.com.orchestration.foodios.entity.common.AddressSnapshot;
 import vn.com.orchestration.foodios.entity.common.BaseEntity;
 
 @Getter
 @Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@SuperBuilder
 @Entity
 @Table(
     name = "stores",
+    indexes = {
+      @Index(name = "idx_stores_merchant_status", columnList = "merchant_id,status")
+    },
     uniqueConstraints = {@UniqueConstraint(name = "uk_stores_slug", columnNames = {"slug"})})
 public class Store extends BaseEntity {
 
@@ -44,8 +52,22 @@ public class Store extends BaseEntity {
   private String phone;
 
   @Enumerated(EnumType.STRING)
+  @Builder.Default
   @Column(name = "status", nullable = false, length = 16)
   private StoreStatus status = StoreStatus.DRAFT;
+
+  @Column(name = "time_zone", nullable = false, length = 60)
+  @Builder.Default
+  private String timeZone = "Asia/Ho_Chi_Minh";
+
+  @Column(name = "hero_image_url", length = 500)
+  private String heroImageUrl;
+
+  @Column(name = "opens_at")
+  private LocalTime opensAt;
+
+  @Column(name = "closes_at")
+  private LocalTime closesAt;
 
   @Embedded
   @AttributeOverrides({
@@ -76,6 +98,6 @@ public class Store extends BaseEntity {
         name = "longitude",
         column = @Column(name = "address_longitude", precision = 9, scale = 6))
   })
+  @Builder.Default
   private AddressSnapshot address = new AddressSnapshot();
 }
-

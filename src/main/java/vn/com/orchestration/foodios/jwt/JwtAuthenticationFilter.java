@@ -11,6 +11,7 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.web.filter.OncePerRequestFilter;
+import vn.com.orchestration.foodios.jwt.identity.IdentityUserContext;
 
 import java.io.IOException;
 import java.util.Collection;
@@ -69,8 +70,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             return;
         }
 
-        String principal = resolvePrincipal(claims, userId);
         Set<SimpleGrantedAuthority> grantedAuthorities = extractAuthorities(claims);
+        IdentityUserContext principal = buildPrincipal(claims, userId);
 
         UsernamePasswordAuthenticationToken authentication =
                 new UsernamePasswordAuthenticationToken(principal, null, grantedAuthorities);
@@ -85,12 +86,16 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         return "refresh".equals(tokenType.trim().toLowerCase(Locale.ROOT));
     }
 
-    private String resolvePrincipal(Claims claims, String fallbackUserId) {
+    private IdentityUserContext buildPrincipal(Claims claims, String fallbackUserId) {
         String email = claims.get(JwtService.CLAIM_EMAIL, String.class);
-        if (email != null && !email.isBlank()) {
-            return email;
-        }
-        return fallbackUserId;
+        String username = claims.get(JwtService.CLAIM_USERNAME, String.class);
+        Set<String> roles = extractRoleCodes(claims);
+        return new IdentityUserContext(
+                fallbackUserId,
+                username,
+                email,
+                roles
+        );
     }
 
     private Set<SimpleGrantedAuthority> extractAuthorities(Claims claims) {
@@ -103,6 +108,25 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         addAuthoritiesFromClaim(grantedAuthorities, authoritiesClaim, false);
 
         return grantedAuthorities;
+    }
+
+    private Set<String> extractRoleCodes(Claims claims) {
+        Set<String> roles = new HashSet<>();
+        Object rolesClaim = claims.get("roles");
+        if (!(rolesClaim instanceof Collection<?> values)) {
+            return roles;
+        }
+        for (Object value : values) {
+            if (value == null) {
+                continue;
+            }
+            String role = value.toString().trim();
+            if (role.isBlank()) {
+                continue;
+            }
+            roles.add(role);
+        }
+        return roles;
     }
 
     private void addAuthoritiesFromClaim(

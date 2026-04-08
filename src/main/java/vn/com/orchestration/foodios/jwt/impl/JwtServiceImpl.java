@@ -38,6 +38,7 @@ public class JwtServiceImpl implements JwtService {
         Map<String, Object> claims = new HashMap<>();
         claims.put(CLAIM_TYPE, "access");
         claims.put(CLAIM_EMAIL, user.getEmail());
+        claims.put(CLAIM_USERNAME, user.getUsername());
         claims.put(CLAIM_ROLES, roles);
         claims.put(CLAIM_AUTHORITIES, authorities);
 
@@ -120,8 +121,13 @@ public class JwtServiceImpl implements JwtService {
         }
     }
 
+    @Override
+    public boolean isRefreshToken(String token) {
+        String tokenType = extractTokenType(token);
+        return "refresh".equalsIgnoreCase(tokenType);
+    }
+
     private static boolean isBlank(String value) {
         return value == null || value.trim().isEmpty();
     }
 }
-

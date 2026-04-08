@@ -8,5 +8,6 @@ import java.util.UUID;
 
 public interface AuthorityRepository extends JpaRepository<Authority, UUID> {
     Optional<Authority> findByCode(String code);
-}
 
+    boolean existsByCode(String code);
+}

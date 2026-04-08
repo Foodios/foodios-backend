@@ -57,4 +57,26 @@ public class ErrorConstant {
     public static final String OTP_EXPIRED_OR_NOT_FOUND_MESSAGE = "OTP expired or not found";
     public static final String INVALID_OTP_MESSAGE = "Invalid OTP";
     public static final String TOO_MANY_ATTEMPTS_MESSAGE = "Too many attempts";
+    public static final String REFRESH_TOKEN_NOT_FOUND_MESSAGE = "Refresh token not found";
+    public static final String INVALID_REFRESH_TOKEN_MESSAGE = "Invalid refresh token";
+    public static final String REFRESH_TOKEN_EXPIRED_MESSAGE = "Refresh token expired";
+    public static final String FILE_UPLOAD_ERROR = "9310";
+    public static final String FILE_UPLOAD_ERROR_MESSAGE = "File upload failed";
+    public static final String INVALID_FILE_MESSAGE = "Invalid file";
+    public static final String STORE_NOT_FOUND_MESSAGE = "Store not found";
+    public static final String CATEGORY_NOT_FOUND_MESSAGE = "Category not found";
+    public static final String PRODUCT_NAME_EXISTS_MESSAGE = "Product already exists in store";
+    public static final String PRODUCT_SKU_EXISTS_MESSAGE = "Product SKU already exists in store";
+    public static final String PRODUCT_SLUG_EXISTS_MESSAGE = "Product slug already exists in store";
+    public static final String MERCHANT_ACCESS_DENIED_MESSAGE = "You are not allowed to manage this merchant";
+    public static final String ADMIN_ACCESS_DENIED_MESSAGE = "You are not allowed to manage merchants";
+    public static final String MERCHANT_EXISTS_MESSAGE = "Merchant already exists";
+    public static final String MERCHANT_SLUG_EXISTS_MESSAGE = "Merchant slug already exists";
+    public static final String STORE_SLUG_EXISTS_MESSAGE = "Store slug already exists";
+    public static final String ROLE_EXISTS_MESSAGE = "Role already exists";
+    public static final String AUTHORITY_EXISTS_MESSAGE = "Authority already exists";
+    public static final String ROLE_NOT_FOUND_MESSAGE = "Role not found";
+    public static final String AUTHORITY_NOT_FOUND_MESSAGE = "Authority not found";
+    public static final String USER_ROLE_UPDATED_MESSAGE = "User role updated";
+    public static final String ROLE_AUTHORITIES_UPDATED_MESSAGE = "Role authorities updated";
 }

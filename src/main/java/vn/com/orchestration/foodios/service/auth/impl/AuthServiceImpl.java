@@ -7,13 +7,20 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import vn.com.orchestration.foodios.dto.auth.LoginRequest;
 import vn.com.orchestration.foodios.dto.auth.LoginResponse;
+import vn.com.orchestration.foodios.dto.auth.LogoutRequest;
+import vn.com.orchestration.foodios.dto.auth.LogoutResponse;
+import vn.com.orchestration.foodios.dto.auth.RefreshTokenRequest;
+import vn.com.orchestration.foodios.dto.auth.RefreshTokenResponse;
 import vn.com.orchestration.foodios.dto.auth.RegisterRequest;
 import vn.com.orchestration.foodios.dto.auth.RegisterResponse;
 import vn.com.orchestration.foodios.dto.auth.VerifyEmailOtpRequest;
 import vn.com.orchestration.foodios.dto.auth.VerifyEmailOtpResponse;
 import vn.com.orchestration.foodios.dto.auth.VerifyEmailResponseData;
 import vn.com.orchestration.foodios.dto.common.ApiResult;
+import vn.com.orchestration.foodios.dto.common.BaseRequest;
 import vn.com.orchestration.foodios.entity.auth.OtpPurpose;
+import vn.com.orchestration.foodios.entity.auth.RefreshToken;
+import vn.com.orchestration.foodios.entity.auth.RefreshTokenStatus;
 import vn.com.orchestration.foodios.entity.auth.UserOtp;
 import vn.com.orchestration.foodios.entity.user.User;
 import vn.com.orchestration.foodios.entity.user.UserStatus;
@@ -30,18 +37,24 @@ import vn.com.orchestration.foodios.service.loyalty.CustomerMembershipService;
 import vn.com.orchestration.foodios.utils.ExceptionUtils;
 
 import java.time.Instant;
+import java.time.OffsetDateTime;
 import java.util.Locale;
 import java.util.Optional;
+import java.util.Set;
+import java.util.UUID;
 
 import static vn.com.orchestration.foodios.constant.ErrorConstant.DUPLICATE_ERROR;
 import static vn.com.orchestration.foodios.constant.ErrorConstant.EMAIL_EXISTS_MESSAGE;
 import static vn.com.orchestration.foodios.constant.ErrorConstant.EMAIL_NOT_VERIFIED_MESSAGE;
 import static vn.com.orchestration.foodios.constant.ErrorConstant.INVALID_INPUT_ERROR;
 import static vn.com.orchestration.foodios.constant.ErrorConstant.INVALID_OTP_MESSAGE;
+import static vn.com.orchestration.foodios.constant.ErrorConstant.INVALID_REFRESH_TOKEN_MESSAGE;
 import static vn.com.orchestration.foodios.constant.ErrorConstant.INVALID_USERNAME_OR_PASSWORD_MESSAGE;
 import static vn.com.orchestration.foodios.constant.ErrorConstant.OTP_EXPIRED_OR_NOT_FOUND_MESSAGE;
 import static vn.com.orchestration.foodios.constant.ErrorConstant.PHONE_NUMBER_EXISTS_MESSAGE;
 import static vn.com.orchestration.foodios.constant.ErrorConstant.RECORD_NOT_FOUND;
+import static vn.com.orchestration.foodios.constant.ErrorConstant.REFRESH_TOKEN_EXPIRED_MESSAGE;
+import static vn.com.orchestration.foodios.constant.ErrorConstant.REFRESH_TOKEN_NOT_FOUND_MESSAGE;
 import static vn.com.orchestration.foodios.constant.ErrorConstant.SUCCESS_CODE;
 import static vn.com.orchestration.foodios.constant.ErrorConstant.SUCCESS_MESSAGE;
 import static vn.com.orchestration.foodios.constant.ErrorConstant.SYSTEM_ERROR;
@@ -76,7 +89,6 @@ public class AuthServiceImpl implements AuthService {
                 request.getData() != null ? request.getData().getPhone() : null
         );
 
-        RegisterResponse response = new RegisterResponse();
         RegisterRequest.RegisterRequestData data = request.getData();
         if (data == null) {
             throw businessException(request, INVALID_INPUT_ERROR, "Missing data");
@@ -92,8 +104,8 @@ public class AuthServiceImpl implements AuthService {
             if (UserStatus.VERIFYING.equals(existingUser.getStatus())) {
                 try {
                     otpService.resendEmailVerificationOtpRequiresNew(existingUser);
-                } catch (Exception e) {
-                    log.info("[REGISTER] Resend verify email failed for VERIFYING userId={}", existingUser.getId(), e);
+                } catch (Exception exception) {
+                    log.info("[REGISTER] Resend verify email failed for VERIFYING userId={}", existingUser.getId(), exception);
                 }
             }
             throw businessException(request, DUPLICATE_ERROR, EMAIL_EXISTS_MESSAGE);
@@ -114,23 +126,22 @@ public class AuthServiceImpl implements AuthService {
                 .passwordHash(passwordEncoder.encode(data.getPassword()))
                 .status(UserStatus.VERIFYING)
                 .build();
-        // Force INSERT early so DB constraint/type issues fail before we send OTP email.
         userRepository.saveAndFlush(user);
 
-        // Default role + membership/points for a new customer
         try {
             userRoleService.assignDefaultCustomerRole(user);
             customerMembershipService.createForNewCustomer(user);
-        } catch (Exception e) {
-            throw businessException(request, SYSTEM_ERROR, e.getMessage());
+        } catch (Exception exception) {
+            throw businessException(request, SYSTEM_ERROR, exception.getMessage());
         }
 
         try {
             otpService.generateEmailVerificationOtpAndSend(user);
-        } catch (Exception e) {
-            throw businessException(request, SYSTEM_ERROR, e.getMessage());
+        } catch (Exception exception) {
+            throw businessException(request, SYSTEM_ERROR, exception.getMessage());
         }
 
+        RegisterResponse response = new RegisterResponse();
         response.setData(
                 RegisterResponse.RegisterResponseData.builder()
                         .id(user.getId())
@@ -140,12 +151,12 @@ public class AuthServiceImpl implements AuthService {
                         .status(user.getStatus())
                         .build()
         );
-        response.setResult(ApiResult.builder().responseCode(SUCCESS_CODE).description(SUCCESS_MESSAGE).build());
+        response.setResult(successResult());
         return response;
     }
 
     @Override
-    @Transactional(readOnly = true)
+    @Transactional
     public LoginResponse login(LoginRequest request) {
         log.info(
                 "[LOGIN] requestId={}, identifier={}",
@@ -153,50 +164,54 @@ public class AuthServiceImpl implements AuthService {
                 request.getData() != null ? request.getData().getIdentifier() : null
         );
 
-        LoginResponse response = new LoginResponse();
         LoginRequest.LoginRequestData data = request.getData();
         if (data == null) {
             throw businessException(request, INVALID_INPUT_ERROR, "Missing data");
         }
 
         String identifier = data.getIdentifier().trim();
-
-        User user =
-                userRepository.findByUsername(identifier)
-                        .orElseGet(() ->
-                                userRepository.findByEmail(identifier.toLowerCase(Locale.ROOT))
-                                        .orElseGet(() -> userRepository.findByPhone(identifier).orElse(null)));
+        User user = userRepository.findByUsername(identifier)
+                .orElseGet(() ->
+                        userRepository.findByEmail(identifier.toLowerCase(Locale.ROOT))
+                                .orElseGet(() -> userRepository.findByPhone(identifier).orElse(null)));
 
         if (user == null || !passwordEncoder.matches(data.getPassword(), user.getPasswordHash())) {
             throw businessException(request, INVALID_INPUT_ERROR, INVALID_USERNAME_OR_PASSWORD_MESSAGE);
         }
 
-        if (user.getStatus() == UserStatus.VERIFYING) {
+        if (UserStatus.VERIFYING.equals(user.getStatus())) {
             throw businessException(request, INVALID_INPUT_ERROR, EMAIL_NOT_VERIFIED_MESSAGE);
         }
-        if (user.getStatus() != UserStatus.ACTIVE) {
+        if (!UserStatus.ACTIVE.equals(user.getStatus())) {
             throw businessException(request, INVALID_INPUT_ERROR, USER_NOT_ACTIVE_MESSAGE);
         }
 
-        java.util.Set<String> roles = userAuthorizationService.getRoles(user);
-        java.util.Set<String> authorities = userAuthorizationService.getAuthorities(user);
+        Set<String> roles = userAuthorizationService.getRoles(user);
+        Set<String> authorities = userAuthorizationService.getAuthorities(user);
         String accessToken = jwtService.generateAccessToken(user, roles, authorities);
         String refreshToken = jwtService.generateRefreshToken(user);
+        OffsetDateTime accessTokenExpiredAt = jwtService.extractExpiration(accessToken);
+        OffsetDateTime refreshTokenExpiredAt = jwtService.extractExpiration(refreshToken);
+
         refreshTokenService.saveNew(user, refreshToken);
 
-        response.setData(
-                LoginResponse.LoginResponseData.builder()
+        return LoginResponse.builder()
+                .requestId(request.getRequestId())
+                .requestDateTime(request.getRequestDateTime())
+                .channel(request.getChannel())
+                .result(successResult())
+                .data(LoginResponse.LoginResponseData.builder()
                         .accessToken(accessToken)
                         .refreshToken(refreshToken)
+                        .accessTokenExpiredAt(accessTokenExpiredAt)
+                        .refreshTokenExpiredAt(refreshTokenExpiredAt)
                         .userId(user.getId())
                         .email(user.getEmail())
                         .roles(roles)
                         .authorities(authorities)
                         .profileCompleted(user.isProfileCompleted())
-                        .build()
-        );
-        response.setResult(ApiResult.builder().responseCode(SUCCESS_CODE).description(SUCCESS_MESSAGE).build());
-        return response;
+                        .build())
+                .build();
     }
 
     @Override
@@ -208,7 +223,6 @@ public class AuthServiceImpl implements AuthService {
                 request.getData() != null ? request.getData().getEmail() : null
         );
 
-        VerifyEmailOtpResponse response = new VerifyEmailOtpResponse();
         VerifyEmailOtpRequest.VerifyEmailOtpRequestData data = request.getData();
         if (data == null) {
             throw businessException(request, INVALID_INPUT_ERROR, "Missing data");
@@ -217,24 +231,23 @@ public class AuthServiceImpl implements AuthService {
         String email = data.getEmail().trim().toLowerCase(Locale.ROOT);
         String code = data.getCode().trim();
 
-        User user =
-                userRepository.findByEmail(email)
-                        .orElseThrow(() -> businessException(request, RECORD_NOT_FOUND, USER_NOT_FOUND_MESSAGE));
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> businessException(request, RECORD_NOT_FOUND, USER_NOT_FOUND_MESSAGE));
 
-        if (user.getStatus() == UserStatus.ACTIVE) {
+        if (UserStatus.ACTIVE.equals(user.getStatus())) {
+            VerifyEmailOtpResponse response = new VerifyEmailOtpResponse();
             response.setData(VerifyEmailResponseData.builder().verified(true).build());
-            response.setResult(ApiResult.builder().responseCode(SUCCESS_CODE).description(SUCCESS_MESSAGE).build());
+            response.setResult(successResult());
             return response;
         }
-        if (user.getStatus() != UserStatus.VERIFYING) {
+        if (!UserStatus.VERIFYING.equals(user.getStatus())) {
             throw businessException(request, INVALID_INPUT_ERROR, USER_NOT_ACTIVE_MESSAGE);
         }
 
-        UserOtp otp =
-                userOtpRepository
-                        .findFirstByUserIdAndPurposeAndUsedAtIsNullAndExpiresAtAfterOrderByCreatedAtDesc(
-                                user.getId(), OtpPurpose.EMAIL_VERIFICATION, Instant.now())
-                        .orElse(null);
+        UserOtp otp = userOtpRepository
+                .findFirstByUserIdAndPurposeAndUsedAtIsNullAndExpiresAtAfterOrderByCreatedAtDesc(
+                        user.getId(), OtpPurpose.EMAIL_VERIFICATION, Instant.now())
+                .orElse(null);
 
         if (otp == null) {
             throw businessException(request, INVALID_INPUT_ERROR, OTP_EXPIRED_OR_NOT_FOUND_MESSAGE);
@@ -256,17 +269,114 @@ public class AuthServiceImpl implements AuthService {
         user.setStatus(UserStatus.ACTIVE);
         userRepository.save(user);
 
+        VerifyEmailOtpResponse response = new VerifyEmailOtpResponse();
         response.setData(VerifyEmailResponseData.builder().verified(true).build());
-        response.setResult(ApiResult.builder().responseCode(SUCCESS_CODE).description(SUCCESS_MESSAGE).build());
+        response.setResult(successResult());
         return response;
     }
 
-    private static BusinessException businessException(
-            vn.com.orchestration.foodios.dto.common.BaseRequest request, String code, String message) {
+    @Override
+    @Transactional
+    public RefreshTokenResponse refreshToken(RefreshTokenRequest request) {
+        log.info("[REFRESH_TOKEN] requestId={}", request.getRequestId());
+
+        RefreshTokenRequest.RefreshTokenRequestData data = request.getData();
+        if (data == null) {
+            throw businessException(request, INVALID_INPUT_ERROR, "Missing data");
+        }
+
+        String rawRefreshToken = data.getRefreshToken().trim();
+        OffsetDateTime now = OffsetDateTime.now();
+
+        if (!jwtService.isTokenValid(rawRefreshToken) || !jwtService.isRefreshToken(rawRefreshToken)) {
+            throw businessException(request, INVALID_INPUT_ERROR, INVALID_REFRESH_TOKEN_MESSAGE);
+        }
+
+        RefreshToken refreshToken = refreshTokenService.findByToken(rawRefreshToken);
+        if (refreshToken == null) {
+            throw businessException(request, RECORD_NOT_FOUND, REFRESH_TOKEN_NOT_FOUND_MESSAGE);
+        }
+
+        if (!RefreshTokenStatus.ACTIVE.equals(refreshToken.getStatus())) {
+            throw businessException(request, RECORD_NOT_FOUND, REFRESH_TOKEN_NOT_FOUND_MESSAGE);
+        }
+
+        if (refreshToken.getExpiredAt() == null || now.isAfter(refreshToken.getExpiredAt())) {
+            refreshTokenService.updateStatus(refreshToken, RefreshTokenStatus.EXPIRED, now);
+            throw businessException(request, RECORD_NOT_FOUND, REFRESH_TOKEN_EXPIRED_MESSAGE);
+        }
+
+        UUID userId = refreshTokenService.extractUserId(rawRefreshToken);
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> businessException(request, RECORD_NOT_FOUND, USER_NOT_FOUND_MESSAGE));
+
+        if (!UserStatus.ACTIVE.equals(user.getStatus())) {
+            throw businessException(request, INVALID_INPUT_ERROR, USER_NOT_ACTIVE_MESSAGE);
+        }
+
+        refreshTokenService.updateStatus(refreshToken, RefreshTokenStatus.USED, now);
+
+        Set<String> roles = userAuthorizationService.getRoles(user);
+        Set<String> authorities = userAuthorizationService.getAuthorities(user);
+        String newAccessToken = jwtService.generateAccessToken(user, roles, authorities);
+        String newRefreshToken = jwtService.generateRefreshToken(user);
+        OffsetDateTime accessTokenExpiredAt = jwtService.extractExpiration(newAccessToken);
+        OffsetDateTime refreshTokenExpiredAt = jwtService.extractExpiration(newRefreshToken);
+
+        refreshTokenService.saveNew(user, newRefreshToken);
+
+        RefreshTokenResponse response = new RefreshTokenResponse();
+        response.setData(
+                RefreshTokenResponse.RefreshTokenResponseData.builder()
+                        .accessToken(newAccessToken)
+                        .refreshToken(newRefreshToken)
+                        .userId(user.getId())
+                        .accessTokenExpiredAt(accessTokenExpiredAt)
+                        .refreshTokenExpiredAt(refreshTokenExpiredAt)
+                        .build()
+        );
+        response.setResult(successResult());
+        return response;
+    }
+
+    @Override
+    @Transactional
+    public LogoutResponse logout(LogoutRequest request) {
+        log.info("[LOGOUT] requestId={}", request.getRequestId());
+
+        LogoutRequest.LogoutRequestData data = request.getData();
+        if (data == null) {
+            throw businessException(request, INVALID_INPUT_ERROR, "Missing data");
+        }
+
+        String rawRefreshToken = data.getRefreshToken().trim();
+        RefreshToken refreshToken = refreshTokenService.findByToken(rawRefreshToken);
+        if (refreshToken == null) {
+            throw businessException(request, RECORD_NOT_FOUND, REFRESH_TOKEN_NOT_FOUND_MESSAGE);
+        }
+
+        boolean revoked = false;
+        if (RefreshTokenStatus.ACTIVE.equals(refreshToken.getStatus())) {
+            refreshTokenService.updateStatus(refreshToken, RefreshTokenStatus.REVOKED, OffsetDateTime.now());
+            revoked = true;
+        }
+
+        LogoutResponse response = new LogoutResponse();
+        response.setData(LogoutResponse.LogoutResponseData.builder().revoked(revoked).build());
+        response.setResult(successResult());
+        return response;
+    }
+
+    private static ApiResult successResult() {
+        return ApiResult.builder().responseCode(SUCCESS_CODE).description(SUCCESS_MESSAGE).build();
+    }
+
+    private static BusinessException businessException(BaseRequest request, String code, String message) {
         return new BusinessException(
                 request.getRequestId(),
                 request.getRequestDateTime(),
                 request.getChannel(),
-                ExceptionUtils.buildResultResponse(code, message));
+                ExceptionUtils.buildResultResponse(code, message)
+        );
     }
 }

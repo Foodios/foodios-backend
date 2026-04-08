@@ -10,6 +10,7 @@ import vn.com.orchestration.foodios.repository.RefreshTokenRepository;
 import vn.com.orchestration.foodios.service.auth.RefreshTokenService;
 
 import java.time.OffsetDateTime;
+import java.util.UUID;
 
 @Service
 public class RefreshTokenServiceImpl implements RefreshTokenService {
@@ -44,5 +45,44 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
                 .build();
         return refreshTokenRepository.saveAndFlush(entity);
     }
-}
 
+    @Override
+    @Transactional(readOnly = true)
+    public RefreshToken findByToken(String token) {
+        return refreshTokenRepository.findByToken(token).orElse(null);
+    }
+
+    @Override
+    @Transactional
+    public RefreshToken updateStatus(RefreshToken refreshToken, RefreshTokenStatus status, OffsetDateTime at) {
+        refreshToken.setStatus(status);
+        if (RefreshTokenStatus.REVOKED.equals(status)) {
+            refreshToken.setRevokedAt(at);
+        }
+        if (RefreshTokenStatus.USED.equals(status)) {
+            refreshToken.setUsedAt(at);
+        }
+        if (RefreshTokenStatus.EXPIRED.equals(status)) {
+            refreshToken.setExpiredAt(at);
+        }
+        return refreshTokenRepository.saveAndFlush(refreshToken);
+    }
+
+    @Override
+    @Transactional
+    public void revokeByToken(String token) {
+        RefreshToken refreshToken = findByToken(token);
+        if (refreshToken == null) {
+            return;
+        }
+        if (RefreshTokenStatus.ACTIVE.equals(refreshToken.getStatus())) {
+            updateStatus(refreshToken, RefreshTokenStatus.REVOKED, OffsetDateTime.now());
+        }
+    }
+
+    @Override
+    public UUID extractUserId(String token) {
+        String userId = jwtService.extractUserId(token);
+        return UUID.fromString(userId);
+    }
+}
