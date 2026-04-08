@@ -79,7 +79,7 @@ public class ErrorConstant {
     public static final String PRODUCT_SLUG_EXISTS_MESSAGE = "Product slug already exists in store";
     public static final String MERCHANT_ACCESS_DENIED_MESSAGE = "You are not allowed to manage this merchant";
     public static final String ADMIN_ACCESS_DENIED_MESSAGE = "You are not allowed to manage merchants";
-    public static final String MERCHANT_EXISTS_MESSAGE = "Merchant already exists";
+    public static final String MERCHANT_EXISTS_MESSAGE = "Merchant with %s already exists";
     public static final String MERCHANT_SLUG_EXISTS_MESSAGE = "Merchant slug already exists";
     public static final String STORE_SLUG_EXISTS_MESSAGE = "Store slug already exists";
     public static final String ROLE_EXISTS_MESSAGE = "Role already exists";
