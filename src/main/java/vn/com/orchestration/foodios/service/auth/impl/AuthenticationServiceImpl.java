@@ -21,11 +21,13 @@ import vn.com.orchestration.foodios.entity.auth.OtpPurpose;
 import vn.com.orchestration.foodios.entity.auth.RefreshToken;
 import vn.com.orchestration.foodios.entity.auth.RefreshTokenStatus;
 import vn.com.orchestration.foodios.entity.auth.UserOtp;
+import vn.com.orchestration.foodios.entity.merchant.MerchantMember;
 import vn.com.orchestration.foodios.entity.user.User;
 import vn.com.orchestration.foodios.entity.user.UserStatus;
 import vn.com.orchestration.foodios.exception.BusinessException;
 import vn.com.orchestration.foodios.jwt.JwtService;
 import vn.com.orchestration.foodios.log.SystemLog;
+import vn.com.orchestration.foodios.repository.MerchantMemberRepository;
 import vn.com.orchestration.foodios.repository.UserOtpRepository;
 import vn.com.orchestration.foodios.repository.UserRepository;
 import vn.com.orchestration.foodios.service.auth.AuthenticationService;
@@ -69,6 +71,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
     private final UserRepository userRepository;
     private final UserOtpRepository userOtpRepository;
+    private final MerchantMemberRepository merchantMemberRepository;
     private final PasswordEncoder passwordEncoder;
     private final OtpService otpService;
     private final UserAuthorizationService userAuthorizationService;
@@ -190,6 +193,9 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
         Set<String> roles = userAuthorizationService.getRoles(user);
         Set<String> authorities = userAuthorizationService.getAuthorities(user);
+        var merchantMemberships = merchantMemberRepository.findByUserId(user.getId()).stream()
+                .map(this::mapMerchantMembership)
+                .toList();
         String accessToken = jwtService.generateAccessToken(user, roles, authorities);
         String refreshToken = jwtService.generateRefreshToken(user);
         OffsetDateTime accessTokenExpiredAt = jwtService.extractExpiration(accessToken);
@@ -211,6 +217,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                         .email(user.getEmail())
                         .roles(roles)
                         .authorities(authorities)
+                        .merchantMemberships(merchantMemberships)
                         .profileCompleted(user.isProfileCompleted())
                         .build())
                 .build();
@@ -374,5 +381,16 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                 request.getChannel(),
                 ExceptionUtils.buildResultResponse(code, message)
         );
+    }
+
+    private LoginResponse.UserMerchantMembership mapMerchantMembership(MerchantMember merchantMember) {
+        return LoginResponse.UserMerchantMembership.builder()
+                .merchantId(merchantMember.getMerchant().getId())
+                .merchantName(merchantMember.getMerchant().getDisplayName())
+                .merchantSlug(merchantMember.getMerchant().getSlug())
+                .memberRole(merchantMember.getRole() != null ? merchantMember.getRole().name() : null)
+                .memberStatus(merchantMember.getStatus() != null ? merchantMember.getStatus().name() : null)
+                .assignedAt(merchantMember.getAssignedAt())
+                .build();
     }
 }

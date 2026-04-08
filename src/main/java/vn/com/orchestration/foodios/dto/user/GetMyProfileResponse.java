@@ -10,8 +10,11 @@ import vn.com.orchestration.foodios.dto.common.BaseResponse;
 import vn.com.orchestration.foodios.entity.user.UserStatus;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.time.OffsetDateTime;
+import java.util.List;
 import java.util.Set;
+import java.util.UUID;
 
 @Getter
 @Setter
@@ -20,6 +23,7 @@ import java.util.Set;
 public class GetMyProfileResponse extends BaseResponse<GetMyProfileResponse.GetMyProfileResponseData> {
     private GetMyProfileMembership membership;
     private GetMyProfileAuthorities authorities;
+    private List<GetMyProfileMerchantMembership> merchantMemberships;
 
     @Getter
     @Setter
@@ -46,6 +50,20 @@ public class GetMyProfileResponse extends BaseResponse<GetMyProfileResponse.GetM
         private BigDecimal pointMultiplier;
         private BigDecimal currentAvailablePoints;
         private BigDecimal totalPoints;
+    }
+
+    @Getter
+    @Setter
+    @AllArgsConstructor
+    @NoArgsConstructor
+    @SuperBuilder
+    public static class GetMyProfileMerchantMembership {
+        private UUID merchantId;
+        private String merchantName;
+        private String merchantSlug;
+        private String memberRole;
+        private String memberStatus;
+        private Instant assignedAt;
     }
 
     @Getter

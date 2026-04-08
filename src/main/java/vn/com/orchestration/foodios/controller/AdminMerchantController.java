@@ -72,19 +72,17 @@ public class AdminMerchantController {
         return HttpUtils.buildResponse(baseRequest, response);
     }
 
-    @PostMapping(APPLICATIONS_PATH + "/{id}" + APPROVE_PATH)
+    @PostMapping(APPLICATIONS_PATH + APPROVE_PATH)
     public ResponseEntity<ReviewMerchantApplicationResponse> approveMerchantApplication(
-            @PathVariable UUID id,
             @Valid @RequestBody ApproveMerchantApplicationRequest request) {
-        ReviewMerchantApplicationResponse response = adminMerchantService.approveMerchantApplication(request, id);
+        ReviewMerchantApplicationResponse response = adminMerchantService.approveMerchantApplication(request);
         return HttpUtils.buildResponse(request, response);
     }
 
-    @PostMapping(APPLICATIONS_PATH + "/{id}" + REJECT_PATH)
+    @PostMapping(APPLICATIONS_PATH + REJECT_PATH)
     public ResponseEntity<ReviewMerchantApplicationResponse> rejectMerchantApplication(
-            @PathVariable UUID id,
             @Valid @RequestBody RejectMerchantApplicationRequest request) {
-        ReviewMerchantApplicationResponse response = adminMerchantService.rejectMerchantApplication(request, id);
+        ReviewMerchantApplicationResponse response = adminMerchantService.rejectMerchantApplication(request);
         return HttpUtils.buildResponse(request, response);
     }
 }

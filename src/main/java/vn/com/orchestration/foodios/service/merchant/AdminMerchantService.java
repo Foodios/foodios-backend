@@ -23,7 +23,7 @@ public interface AdminMerchantService {
 
     GetMerchantApplicationFormDetailResponse getMerchantApplicationFormDetail(BaseRequest request, UUID id);
 
-    ReviewMerchantApplicationResponse approveMerchantApplication(ApproveMerchantApplicationRequest request, UUID id);
+    ReviewMerchantApplicationResponse approveMerchantApplication(ApproveMerchantApplicationRequest request);
 
-    ReviewMerchantApplicationResponse rejectMerchantApplication(RejectMerchantApplicationRequest request, UUID id);
+    ReviewMerchantApplicationResponse rejectMerchantApplication(RejectMerchantApplicationRequest request);
 }

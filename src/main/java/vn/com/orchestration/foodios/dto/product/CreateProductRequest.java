@@ -41,11 +41,15 @@ public class CreateProductRequest extends BaseRequest {
         @NotBlank
         @Size(max = 200)
         private String name;
+        @Size(max = 220)
+        private String slug;
         @Size(max = 5000)
         private String description;
         @NotNull
         @DecimalMin(value = "0.0", inclusive = false)
         private BigDecimal price;
+        @DecimalMin(value = "0.0", inclusive = false)
+        private BigDecimal compareAtPrice;
         @Size(max = 3)
         private String currency;
         @Size(max = 64)
@@ -54,6 +58,12 @@ public class CreateProductRequest extends BaseRequest {
         private String imageUrl;
         @Min(0)
         private Integer internalStock;
+        @Min(0)
+        private Integer sortOrder;
+        private Boolean featured;
+        private Boolean available;
+        @Min(0)
+        private Integer preparationTimeMinutes;
         private ProductStatus status;
     }
 }

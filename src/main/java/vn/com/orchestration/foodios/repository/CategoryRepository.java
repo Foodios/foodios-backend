@@ -24,4 +24,8 @@ public interface CategoryRepository extends JpaRepository<Category, UUID> {
   Page<Category> findByStoreIdAndStatus(UUID storeId, CategoryStatus status, Pageable pageable);
 
   boolean existsByStoreIdAndSlug(UUID storeId, String slug);
+
+  boolean existsByStoreIdAndSlugAndIdNot(UUID storeId, String slug, UUID id);
+
+  boolean existsByParentId(UUID parentId);
 }

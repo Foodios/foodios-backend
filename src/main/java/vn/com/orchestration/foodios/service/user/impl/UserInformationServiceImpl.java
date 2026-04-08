@@ -9,6 +9,7 @@ import vn.com.orchestration.foodios.dto.user.UpdateProfileRequest;
 import vn.com.orchestration.foodios.dto.user.UpdateProfileResponse;
 import vn.com.orchestration.foodios.entity.loyalty.CustomerMembership;
 import vn.com.orchestration.foodios.entity.loyalty.MembershipTier;
+import vn.com.orchestration.foodios.entity.merchant.MerchantMember;
 import vn.com.orchestration.foodios.entity.user.Authority;
 import vn.com.orchestration.foodios.entity.user.User;
 import vn.com.orchestration.foodios.entity.user.UserRole;
@@ -17,6 +18,7 @@ import vn.com.orchestration.foodios.exception.BusinessException;
 import vn.com.orchestration.foodios.log.SystemLog;
 import vn.com.orchestration.foodios.repository.AuthorityRepository;
 import vn.com.orchestration.foodios.repository.CustomerMembershipRepository;
+import vn.com.orchestration.foodios.repository.MerchantMemberRepository;
 import vn.com.orchestration.foodios.repository.RoleRepository;
 import vn.com.orchestration.foodios.repository.UserRepository;
 import vn.com.orchestration.foodios.repository.UserRoleRepository;
@@ -25,6 +27,7 @@ import vn.com.orchestration.foodios.utils.ApiResultFactory;
 import vn.com.orchestration.foodios.utils.ExceptionUtils;
 
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -51,6 +54,7 @@ public class UserInformationServiceImpl implements UserInformationService {
     private final RoleRepository roleRepository;
     private final AuthorityRepository authorityRepository;
     private final UserRoleRepository userRoleRepository;
+    private final MerchantMemberRepository merchantMemberRepository;
     private final SystemLog sLog = SystemLog.getLogger(this.getClass());
 
     @Override
@@ -73,7 +77,7 @@ public class UserInformationServiceImpl implements UserInformationService {
 
         Set<String> roles = userRole
                 .stream()
-                .map(r -> r.getRole().getCode())
+                .map(r -> normalizeRoleCode(r.getRole().getCode()))
                 .collect(Collectors.toSet());
 
         Set<String> authorities = userRole
@@ -81,6 +85,12 @@ public class UserInformationServiceImpl implements UserInformationService {
                 .flatMap(r -> r.getRole().getAuthorities().stream())
                 .map(Authority::getCode)
                 .collect(Collectors.toSet());
+
+        List<GetMyProfileResponse.GetMyProfileMerchantMembership> merchantMemberships = merchantMemberRepository
+                .findByUserId(UUID.fromString(userId))
+                .stream()
+                .map(this::mapMerchantMembership)
+                .toList();
 
         return GetMyProfileResponse.builder()
                 .requestId(request.getRequestId())
@@ -91,6 +101,7 @@ public class UserInformationServiceImpl implements UserInformationService {
                         .roles(roles)
                         .authorities(authorities)
                         .build())
+                .merchantMemberships(merchantMemberships)
                 .membership(GetMyProfileResponse.GetMyProfileMembership.builder()
                         .badge(membershipTier.getBadge())
                         .discountPercent(membershipTier.getDiscountPercent())
@@ -178,5 +189,24 @@ public class UserInformationServiceImpl implements UserInformationService {
                         .fullName(request.getData().getFullName())
                         .build())
                 .build();
+    }
+
+    private GetMyProfileResponse.GetMyProfileMerchantMembership mapMerchantMembership(MerchantMember merchantMember) {
+        return GetMyProfileResponse.GetMyProfileMerchantMembership.builder()
+                .merchantId(merchantMember.getMerchant().getId())
+                .merchantName(merchantMember.getMerchant().getDisplayName())
+                .merchantSlug(merchantMember.getMerchant().getSlug())
+                .memberRole(merchantMember.getRole() != null ? merchantMember.getRole().name() : null)
+                .memberStatus(merchantMember.getStatus() != null ? merchantMember.getStatus().name() : null)
+                .assignedAt(merchantMember.getAssignedAt())
+                .build();
+    }
+
+    private String normalizeRoleCode(String code) {
+        if (code == null || code.isBlank()) {
+            return null;
+        }
+        String normalized = code.trim().toUpperCase(Locale.ROOT);
+        return normalized.startsWith("ROLE_") ? normalized : "ROLE_" + normalized;
     }
 }

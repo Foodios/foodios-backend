@@ -20,6 +20,9 @@ import vn.com.orchestration.foodios.entity.merchant.ApplicationFormStatus;
 import vn.com.orchestration.foodios.entity.merchant.Merchant;
 import vn.com.orchestration.foodios.entity.merchant.MerchantApplicationForm;
 import vn.com.orchestration.foodios.entity.merchant.MerchantApplicationFormRepository;
+import vn.com.orchestration.foodios.entity.merchant.MerchantMember;
+import vn.com.orchestration.foodios.entity.merchant.MerchantMemberRole;
+import vn.com.orchestration.foodios.entity.merchant.MerchantMemberStatus;
 import vn.com.orchestration.foodios.entity.merchant.MerchantPayout;
 import vn.com.orchestration.foodios.entity.merchant.MerchantStatus;
 import vn.com.orchestration.foodios.entity.merchant.Store;
@@ -28,11 +31,15 @@ import vn.com.orchestration.foodios.exception.BusinessException;
 import vn.com.orchestration.foodios.jwt.identity.IdentityUserContext;
 import vn.com.orchestration.foodios.jwt.identity.IdentityUserContextProvider;
 import vn.com.orchestration.foodios.log.SystemLog;
+import vn.com.orchestration.foodios.repository.MerchantMemberRepository;
 import vn.com.orchestration.foodios.repository.MerchantRepository;
 import vn.com.orchestration.foodios.repository.StoreRepository;
+import vn.com.orchestration.foodios.repository.UserRepository;
+import vn.com.orchestration.foodios.service.auth.UserRoleService;
 import vn.com.orchestration.foodios.service.merchant.AdminMerchantService;
 import vn.com.orchestration.foodios.utils.ExceptionUtils;
 
+import java.time.Instant;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.util.Locale;
@@ -56,11 +63,15 @@ import static vn.com.orchestration.foodios.constant.ErrorConstant.SUCCESS_MESSAG
 public class AdminMerchantServiceImpl implements AdminMerchantService {
 
     private static final Set<String> ADMIN_ROLES = Set.of("ROLE_SUPER_ADMIN", "ROLE_PLATFORM_ADMIN");
+    private static final String MERCHANT_OWNER_ROLE = "MERCHANT_OWNER";
 
     private final MerchantRepository merchantRepository;
     private final MerchantApplicationFormRepository merchantApplicationFormRepository;
+    private final MerchantMemberRepository merchantMemberRepository;
     private final StoreRepository storeRepository;
+    private final UserRepository userRepository;
     private final IdentityUserContextProvider identityUserContextProvider;
+    private final UserRoleService userRoleService;
     private final SystemLog sLog = SystemLog.getLogger(this.getClass());
 
     @Override
@@ -232,10 +243,11 @@ public class AdminMerchantServiceImpl implements AdminMerchantService {
 
     @Override
     @Transactional
-    public ReviewMerchantApplicationResponse approveMerchantApplication(ApproveMerchantApplicationRequest request, UUID id) {
+    public ReviewMerchantApplicationResponse approveMerchantApplication(ApproveMerchantApplicationRequest request) {
         authorizeAdmin(request);
 
         IdentityUserContext currentUser = identityUserContextProvider.requireCurrentUser();
+        UUID id = request.getData().getId();
         MerchantApplicationForm form = requireReviewableApplicationForm(request, id);
         validateMerchantUniqueness(request, form);
         String displayName = resolveDisplayName(request, form);
@@ -260,6 +272,7 @@ public class AdminMerchantServiceImpl implements AdminMerchantService {
                 .status(MerchantStatus.ACTIVE)
                 .build();
         Merchant savedMerchant = merchantRepository.saveAndFlush(merchant);
+        assignMerchantOwnership(request, form, savedMerchant);
 
         OffsetDateTime now = OffsetDateTime.now();
         form.setMerchantId(savedMerchant.getId().toString());
@@ -275,10 +288,11 @@ public class AdminMerchantServiceImpl implements AdminMerchantService {
 
     @Override
     @Transactional
-    public ReviewMerchantApplicationResponse rejectMerchantApplication(RejectMerchantApplicationRequest request, UUID id) {
+    public ReviewMerchantApplicationResponse rejectMerchantApplication(RejectMerchantApplicationRequest request) {
         authorizeAdmin(request);
 
         IdentityUserContext currentUser = identityUserContextProvider.requireCurrentUser();
+        UUID id = request.getData().getId();
         MerchantApplicationForm form = requireReviewableApplicationForm(request, id);
 
         form.setStatus(ApplicationFormStatus.REJECTED);
@@ -430,6 +444,35 @@ public class AdminMerchantServiceImpl implements AdminMerchantService {
     private String normalizeEmail(String value) {
         String trimmed = trimToNull(value);
         return trimmed == null ? null : trimmed.toLowerCase(Locale.ROOT);
+    }
+
+    private void assignMerchantOwnership(BaseRequest request, MerchantApplicationForm form, Merchant merchant) {
+        UUID submittedBy = parseSubmittedBy(request, form.getSubmittedBy());
+        var user = userRepository.findById(submittedBy)
+                .orElseThrow(() -> businessException(request, RECORD_NOT_FOUND, "Submitted user not found"));
+
+        userRoleService.assignRoleIfAbsent(user, MERCHANT_OWNER_ROLE);
+
+        if (merchantMemberRepository.existsByMerchantIdAndUserId(merchant.getId(), user.getId())) {
+            return;
+        }
+
+        MerchantMember merchantMember = MerchantMember.builder()
+                .merchant(merchant)
+                .user(user)
+                .role(MerchantMemberRole.OWNER)
+                .status(MerchantMemberStatus.ACTIVE)
+                .assignedAt(Instant.now())
+                .build();
+        merchantMemberRepository.saveAndFlush(merchantMember);
+    }
+
+    private UUID parseSubmittedBy(BaseRequest request, String submittedBy) {
+        try {
+            return UUID.fromString(submittedBy);
+        } catch (Exception exception) {
+            throw businessException(request, INVALID_INPUT_ERROR, "Invalid submittedBy in merchant application form");
+        }
     }
 
     private String buildMerchantSlug(String merchantName) {

@@ -28,13 +28,19 @@ public class UserRoleServiceImpl implements UserRoleService {
     @Override
     @Transactional
     public void assignDefaultCustomerRole(User user) {
+        assignRoleIfAbsent(user, DEFAULT_CUSTOMER_ROLE);
+    }
+
+    @Override
+    @Transactional
+    public void assignRoleIfAbsent(User user, String roleCode) {
         if (user == null || user.getId() == null) {
             throw new IllegalArgumentException("User must be persisted before assigning roles");
         }
 
         Role role = roleRepository
-                .findByCode(DEFAULT_CUSTOMER_ROLE)
-                .orElseThrow(() -> new IllegalStateException("Default role CUSTOMER is not preloaded"));
+                .findByCode(roleCode)
+                .orElseThrow(() -> new IllegalStateException("Role " + roleCode + " is not preloaded"));
 
         UserRoleId id = UserRoleId.builder()
                 .userId(user.getId())

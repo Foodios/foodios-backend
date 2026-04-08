@@ -21,6 +21,8 @@ public interface CouponRepository extends JpaRepository<Coupon, UUID> {
 
   List<Coupon> findByMerchantId(UUID merchantId);
 
+  List<Coupon> findByMerchantIdAndStatus(UUID merchantId, CouponStatus status);
+
   Page<Coupon> findByStoreId(UUID storeId, Pageable pageable);
 
   Page<Coupon> findByStoreIdAndStatus(UUID storeId, CouponStatus status, Pageable pageable);
@@ -32,4 +34,6 @@ public interface CouponRepository extends JpaRepository<Coupon, UUID> {
   boolean existsByStoreIdAndCodeIgnoreCase(UUID storeId, String code);
 
   boolean existsByMerchantIdAndCodeIgnoreCase(UUID merchantId, String code);
+
+  boolean existsByMerchantIdAndCodeIgnoreCaseAndIdNot(UUID merchantId, String code, UUID id);
 }

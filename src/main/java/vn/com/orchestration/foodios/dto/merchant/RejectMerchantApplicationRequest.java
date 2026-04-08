@@ -10,6 +10,8 @@ import lombok.Setter;
 import lombok.experimental.SuperBuilder;
 import vn.com.orchestration.foodios.dto.common.BaseRequest;
 
+import java.util.UUID;
+
 @Getter
 @Setter
 @NoArgsConstructor
@@ -26,6 +28,9 @@ public class RejectMerchantApplicationRequest extends BaseRequest {
     @AllArgsConstructor
     @SuperBuilder
     public static class RejectMerchantApplicationRequestData {
+        @NotNull
+        private UUID id;
+
         @Size(max = 1000)
         @jakarta.validation.constraints.NotBlank
         private String reason;

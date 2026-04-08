@@ -7,6 +7,7 @@ public final class ApiConstant {
   public static final String API_PATH = "/api";
   public static final String API_VERSION = "/v1";
   public static final String ME_PROFILE_PATH = "/profile-me";
+  public static final String MY_PATH = "/my";
   public static final String ADMIN_PATH = "/admin";
   public static final String USERS_PATH = "/users";
   public static final String ROLES_PATH = "/roles";
@@ -17,7 +18,12 @@ public final class ApiConstant {
   public static final String PROFILE_PATH = "/profile";
   public static final String SIGNUP_PATH = "/signup";
   public static final String MERCHANTS_PATH = "/merchants";
+  public static final String STORES_PATH = "/stores";
   public static final String PRODUCTS_PATH = "/products";
+  public static final String CATEGORIES_PATH = "/categories";
+  public static final String COUPONS_PATH = "/coupons";
+  public static final String REDEMPTIONS_PATH = "/redemptions";
+  public static final String REVIEWS_PATH = "/reviews";
   public static final String CREATE_PATH = "/create";
   public static final String UPDATE_PATH = "/update";
   public static final String REGISTER_PATH = "/register";

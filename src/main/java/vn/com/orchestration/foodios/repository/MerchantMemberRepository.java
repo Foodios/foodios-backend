@@ -17,6 +17,8 @@ public interface MerchantMemberRepository extends JpaRepository<MerchantMember, 
 
   List<MerchantMember> findByUserId(UUID userId);
 
+  List<MerchantMember> findByUserIdAndStatus(UUID userId, MerchantMemberStatus status);
+
   boolean existsByMerchantIdAndUserId(UUID merchantId, UUID userId);
 
   boolean existsByMerchantIdAndUserIdAndStatus(
