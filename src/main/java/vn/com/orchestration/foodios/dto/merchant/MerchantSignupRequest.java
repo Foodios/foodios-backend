@@ -66,6 +66,7 @@ public class MerchantSignupRequest extends BaseRequest {
     public static class MerchantInfo {
         private String legalName;
         private String displayName;
+        private String slug;
         private String description;
         private String taxCode;
         private String businessRegistrationNumber;

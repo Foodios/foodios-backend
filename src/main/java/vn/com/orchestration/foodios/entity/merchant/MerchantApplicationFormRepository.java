@@ -14,6 +14,8 @@ import java.util.UUID;
 public interface MerchantApplicationFormRepository extends JpaRepository<MerchantApplicationForm, UUID> {
     boolean existsByLegalNameAndStatusIn(String legalName, List<ApplicationFormStatus> submitted);
 
+    boolean existsBySlugIgnoreCaseAndStatusIn(String slug, List<ApplicationFormStatus> submitted);
+
     Page<MerchantApplicationForm> findAllByStatus(ApplicationFormStatus status, Pageable pageable);
 
     @Query(value = """

@@ -17,6 +17,8 @@ public interface CategoryRepository extends JpaRepository<Category, UUID> {
 
   List<Category> findByStoreIdAndStatusOrderBySortOrderAsc(UUID storeId, CategoryStatus status);
 
+  List<Category> findByStoreMerchantIdAndStatusAndActiveTrue(UUID merchantId, CategoryStatus status);
+
   List<Category> findByStoreId(UUID storeId);
 
   Page<Category> findByStoreId(UUID storeId, Pageable pageable);

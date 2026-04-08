@@ -13,10 +13,12 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 import lombok.AccessLevel;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
+import lombok.experimental.SuperBuilder;
 import vn.com.orchestration.foodios.entity.common.AddressSnapshot;
 import vn.com.orchestration.foodios.entity.common.BaseEntity;
 import vn.com.orchestration.foodios.entity.merchant.Store;
@@ -28,6 +30,7 @@ import java.time.Instant;
 @Getter
 @Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@SuperBuilder
 @Entity
 @Table(
     name = "orders",
@@ -48,20 +51,40 @@ public class FoodOrder extends BaseEntity {
   private User customer;
 
   @Enumerated(EnumType.STRING)
+  @Builder.Default
   @Column(name = "status", nullable = false, length = 24)
   private OrderStatus status = OrderStatus.DRAFT;
 
+  @Enumerated(EnumType.STRING)
+  @Column(name = "service_method", length = 16)
+  private ServiceMethod serviceMethod;
+
   @Column(name = "subtotal", nullable = false, precision = 19, scale = 2)
+  @Builder.Default
   private BigDecimal subtotal = BigDecimal.ZERO;
 
   @Column(name = "delivery_fee", nullable = false, precision = 19, scale = 2)
+  @Builder.Default
   private BigDecimal deliveryFee = BigDecimal.ZERO;
 
   @Column(name = "service_fee", nullable = false, precision = 19, scale = 2)
+  @Builder.Default
   private BigDecimal serviceFee = BigDecimal.ZERO;
 
+  @Column(name = "discount_amount", nullable = false, precision = 19, scale = 2)
+  @Builder.Default
+  private BigDecimal discountAmount = BigDecimal.ZERO;
+
   @Column(name = "total", nullable = false, precision = 19, scale = 2)
+  @Builder.Default
   private BigDecimal total = BigDecimal.ZERO;
+
+  @Column(name = "currency", nullable = false, length = 3)
+  @Builder.Default
+  private String currency = "VND";
+
+  @Column(name = "applied_coupon_code", length = 40)
+  private String appliedCouponCode;
 
   @Column(name = "notes", length = 500)
   private String notes;
@@ -100,4 +123,3 @@ public class FoodOrder extends BaseEntity {
   })
   private AddressSnapshot deliveryAddress = new AddressSnapshot();
 }
-

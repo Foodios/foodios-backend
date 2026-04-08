@@ -20,6 +20,8 @@ public interface ProductRepository extends JpaRepository<Product, UUID> {
   List<Product> findByStoreIdAndStatusOrderBySortOrderAscNameAsc(
       UUID storeId, ProductStatus status);
 
+  List<Product> findByStoreMerchantIdAndStatusAndAvailableTrue(UUID merchantId, ProductStatus status);
+
   Page<Product> findByStoreId(UUID storeId, Pageable pageable);
 
   Page<Product> findByStoreIdAndStatus(UUID storeId, ProductStatus status, Pageable pageable);

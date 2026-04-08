@@ -13,5 +13,7 @@ public interface CouponRedemptionRepository extends JpaRepository<CouponRedempti
 
   long countByCouponId(UUID couponId);
 
+  long countByCouponIdAndUserId(UUID couponId, UUID userId);
+
   List<CouponRedemption> findByOrderId(UUID orderId);
 }

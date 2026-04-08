@@ -10,10 +10,12 @@ import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 import lombok.AccessLevel;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
+import lombok.experimental.SuperBuilder;
 import vn.com.orchestration.foodios.entity.common.BaseEntity;
 
 import java.math.BigDecimal;
@@ -22,6 +24,7 @@ import java.time.Instant;
 @Getter
 @Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@SuperBuilder
 @Entity
 @Table(
     name = "payments",
@@ -38,6 +41,7 @@ public class Payment extends BaseEntity {
   private PaymentMethod method;
 
   @Enumerated(EnumType.STRING)
+  @Builder.Default
   @Column(name = "status", nullable = false, length = 16)
   private PaymentStatus status = PaymentStatus.PENDING;
 
@@ -53,4 +57,3 @@ public class Payment extends BaseEntity {
   @Column(name = "paid_at")
   private Instant paidAt;
 }
-

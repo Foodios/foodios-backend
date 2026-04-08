@@ -39,6 +39,7 @@ public class GetMerchantApplicationFormDetailResponse
         private String ownerPhone;
         private String merchantName;
         private String displayName;
+        private String slug;
         private String description;
         private String taxCode;
         private String businessRegistrationNumber;

@@ -43,6 +43,7 @@ public class GetMerchantApplicationFormsResponse
         private String submittedBy;
         private String legalName;
         private String displayName;
+        private String slug;
         private String ownerFullName;
         private String ownerEmail;
         private String ownerPhone;

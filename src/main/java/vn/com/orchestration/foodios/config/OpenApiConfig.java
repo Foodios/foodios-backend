@@ -9,7 +9,6 @@ import io.swagger.v3.oas.models.security.SecurityScheme;
 import org.springdoc.core.customizers.OperationCustomizer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.HttpMethod;
 import org.springframework.web.method.HandlerMethod;
 
 import java.util.ArrayList;
@@ -79,6 +78,7 @@ public class OpenApiConfig {
     private boolean requiresAuthorization(HandlerMethod handlerMethod) {
         String[] publicPrefixes = {
                 "/api/v1/authentication",
+                "/api/v1/public",
                 "/actuator",
                 "/error"
         };

@@ -5,13 +5,16 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import vn.com.orchestration.foodios.dto.common.BaseRequest;
 import vn.com.orchestration.foodios.dto.merchant.GetMyMerchantResponse;
+import vn.com.orchestration.foodios.dto.merchant.SearchMerchantRequest;
+import vn.com.orchestration.foodios.dto.merchant.SearchMerchantResponse;
 import vn.com.orchestration.foodios.dto.merchant.MerchantSignupRequest;
 import vn.com.orchestration.foodios.dto.merchant.MerchantSignupResponse;
 import vn.com.orchestration.foodios.entity.merchant.ApplicationFormStatus;
-import vn.com.orchestration.foodios.entity.merchant.MerchantMember;
-import vn.com.orchestration.foodios.entity.merchant.MerchantMemberStatus;
+import vn.com.orchestration.foodios.entity.merchant.Merchant;
 import vn.com.orchestration.foodios.entity.merchant.MerchantApplicationForm;
 import vn.com.orchestration.foodios.entity.merchant.MerchantApplicationFormRepository;
+import vn.com.orchestration.foodios.entity.merchant.MerchantMember;
+import vn.com.orchestration.foodios.entity.merchant.MerchantMemberStatus;
 import vn.com.orchestration.foodios.entity.user.User;
 import vn.com.orchestration.foodios.exception.BusinessException;
 import vn.com.orchestration.foodios.jwt.identity.IdentityUserContext;
@@ -22,6 +25,9 @@ import vn.com.orchestration.foodios.repository.UserRepository;
 import vn.com.orchestration.foodios.service.merchant.MerchantManagementService;
 import vn.com.orchestration.foodios.utils.ApiResultFactory;
 import vn.com.orchestration.foodios.utils.ExceptionUtils;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 
 import java.time.OffsetDateTime;
 import java.util.List;
@@ -30,6 +36,7 @@ import java.util.UUID;
 import static vn.com.orchestration.foodios.constant.ErrorConstant.DUPLICATE_ERROR;
 import static vn.com.orchestration.foodios.constant.ErrorConstant.INVALID_INPUT_ERROR;
 import static vn.com.orchestration.foodios.constant.ErrorConstant.MERCHANT_EXISTS;
+import static vn.com.orchestration.foodios.constant.ErrorConstant.MERCHANT_SLUG_EXISTS_MESSAGE;
 import static vn.com.orchestration.foodios.constant.ErrorConstant.RECORD_NOT_FOUND;
 import static vn.com.orchestration.foodios.constant.ErrorConstant.USER_NOT_FOUND_MESSAGE;
 
@@ -51,8 +58,10 @@ public class MerchantManagementServiceImpl implements MerchantManagementService 
         OffsetDateTime now = OffsetDateTime.now();
 
         String legalName = request.getData().getMerchant().getLegalName();
+        String displayName = request.getData().getMerchant().getDisplayName();
         String taxCode = request.getData().getMerchant().getTaxCode();
         String registrationNo = request.getData().getMerchant().getBusinessRegistrationNumber();
+        String merchantSlug = resolveApplicationSlug(request, request.getData().getMerchant().getSlug(), displayName, legalName);
 
         String formCode = merchantApplicationFormRepository.generateFormCode();
 
@@ -105,6 +114,19 @@ public class MerchantManagementServiceImpl implements MerchantManagementService 
             );
         }
 
+        boolean slugApplicationExists = merchantApplicationFormRepository.existsBySlugIgnoreCaseAndStatusIn(
+                merchantSlug,
+                List.of(ApplicationFormStatus.SUBMITTED, ApplicationFormStatus.UNDER_REVIEW)
+        );
+        if (slugApplicationExists || merchantRepository.existsBySlug(merchantSlug)) {
+            throw new BusinessException(
+                    request.getRequestId(),
+                    request.getRequestDateTime(),
+                    request.getChannel(),
+                    ExceptionUtils.buildResultResponse(DUPLICATE_ERROR, MERCHANT_SLUG_EXISTS_MESSAGE)
+            );
+        }
+
         var payout = request.getData().getPayout();
 
         MerchantApplicationForm form = MerchantApplicationForm.builder()
@@ -116,7 +138,8 @@ public class MerchantManagementServiceImpl implements MerchantManagementService 
                 .ownerEmail(request.getData().getOwner().getEmail())
                 .ownerPhone(request.getData().getOwner().getPhone())
                 .legalName(legalName)
-                .displayName(request.getData().getMerchant().getDisplayName())
+                .displayName(displayName)
+                .slug(merchantSlug)
                 .description(request.getData().getMerchant().getDescription())
                 .taxCode(taxCode)
                 .businessRegistrationNumber(registrationNo)
@@ -207,6 +230,43 @@ public class MerchantManagementServiceImpl implements MerchantManagementService 
                 .build();
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public SearchMerchantResponse search(SearchMerchantRequest request) {
+        Pageable pageable = PageRequest.of(request.getPageNumber(), request.getPageSize());
+        Page<Merchant> merchantPage = merchantRepository.findByDisplayNameContainingIgnoreCase(
+                request.getName() != null ? request.getName() : "", 
+                pageable
+        );
+
+        List<SearchMerchantResponse.MerchantPayload> items = merchantPage.getContent().stream()
+                .map(merchant -> SearchMerchantResponse.MerchantPayload.builder()
+                        .id(merchant.getId().toString())
+                        .displayName(merchant.getDisplayName())
+                        .slug(merchant.getSlug())
+                        .logoUrl(merchant.getLogoUrl())
+                        .description(merchant.getDescription())
+                        .cuisineCategory(merchant.getCuisineCategory())
+                        .status(merchant.getStatus().name())
+                        .build())
+                .toList();
+
+        return SearchMerchantResponse.builder()
+                .requestId(request.getRequestId())
+                .requestDateTime(request.getRequestDateTime())
+                .channel(request.getChannel())
+                .result(apiResultFactory.buildSuccess())
+                .data(SearchMerchantResponse.SearchMerchantResponseData.builder()
+                        .items(items)
+                        .pageNumber(merchantPage.getNumber())
+                        .pageSize(merchantPage.getSize())
+                        .totalItems(merchantPage.getTotalElements())
+                        .totalPages(merchantPage.getTotalPages())
+                        .hasNext(merchantPage.hasNext())
+                        .build())
+                .build();
+    }
+
     private UUID resolveCurrentUserId(BaseRequest request, IdentityUserContext currentUser) {
         try {
             return UUID.fromString(currentUser.subject());
@@ -218,5 +278,43 @@ public class MerchantManagementServiceImpl implements MerchantManagementService 
                     ExceptionUtils.buildResultResponse(INVALID_INPUT_ERROR, "Invalid current user")
             );
         }
+    }
+
+    private String resolveApplicationSlug(MerchantSignupRequest request, String requestedSlug, String displayName, String legalName) {
+        String normalizedSlug = trimToNull(requestedSlug);
+        if (normalizedSlug != null) {
+            return slugify(normalizedSlug);
+        }
+
+        String source = trimToNull(displayName);
+        if (source == null) {
+            source = trimToNull(legalName);
+        }
+        if (source == null) {
+            throw new BusinessException(
+                    request.getRequestId(),
+                    request.getRequestDateTime(),
+                    request.getChannel(),
+                    ExceptionUtils.buildResultResponse(INVALID_INPUT_ERROR, "Merchant display name or legal name is required")
+            );
+        }
+        return slugify(source);
+    }
+
+    private String trimToNull(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        return value.trim();
+    }
+
+    private String slugify(String value) {
+        String normalized = trimToNull(value);
+        if (normalized == null) {
+            return "merchant";
+        }
+        String slug = normalized.toLowerCase(java.util.Locale.ROOT).replaceAll("[^a-z0-9]+", "-");
+        slug = slug.replaceAll("(^-|-$)", "");
+        return slug.isBlank() ? "merchant" : slug;
     }
 }

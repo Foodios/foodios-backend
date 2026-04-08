@@ -71,6 +71,9 @@ public class MerchantApplicationForm extends BaseEntity {
     @Column(name = "display_name")
     private String displayName;
 
+    @Column(name = "slug")
+    private String slug;
+
     @Column(name = "description")
     private String description;
 

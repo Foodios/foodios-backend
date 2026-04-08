@@ -4,6 +4,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import vn.com.orchestration.foodios.entity.promotion.Coupon;
+import vn.com.orchestration.foodios.entity.promotion.CouponScope;
 import vn.com.orchestration.foodios.entity.promotion.CouponStatus;
 
 import java.util.List;
@@ -23,6 +24,10 @@ public interface CouponRepository extends JpaRepository<Coupon, UUID> {
 
   List<Coupon> findByMerchantIdAndStatus(UUID merchantId, CouponStatus status);
 
+  List<Coupon> findByScope(CouponScope scope);
+
+  List<Coupon> findByScopeAndStatus(CouponScope scope, CouponStatus status);
+
   Page<Coupon> findByStoreId(UUID storeId, Pageable pageable);
 
   Page<Coupon> findByStoreIdAndStatus(UUID storeId, CouponStatus status, Pageable pageable);
@@ -36,4 +41,8 @@ public interface CouponRepository extends JpaRepository<Coupon, UUID> {
   boolean existsByMerchantIdAndCodeIgnoreCase(UUID merchantId, String code);
 
   boolean existsByMerchantIdAndCodeIgnoreCaseAndIdNot(UUID merchantId, String code, UUID id);
+
+  boolean existsByScopeAndCodeIgnoreCase(CouponScope scope, String code);
+
+  boolean existsByScopeAndCodeIgnoreCaseAndIdNot(CouponScope scope, String code, UUID id);
 }

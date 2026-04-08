@@ -13,8 +13,12 @@ import vn.com.orchestration.foodios.dto.merchant.CreateMerchantRequest;
 import vn.com.orchestration.foodios.dto.merchant.CreateMerchantResponse;
 import vn.com.orchestration.foodios.dto.merchant.GetMerchantApplicationFormDetailResponse;
 import vn.com.orchestration.foodios.dto.merchant.GetMerchantApplicationFormsResponse;
+import vn.com.orchestration.foodios.dto.merchant.GetMerchantsResponse;
 import vn.com.orchestration.foodios.dto.merchant.RejectMerchantApplicationRequest;
 import vn.com.orchestration.foodios.dto.merchant.ReviewMerchantApplicationResponse;
+import vn.com.orchestration.foodios.dto.merchant.UpdateMerchantRequest;
+import vn.com.orchestration.foodios.dto.merchant.UpdateMerchantResponse;
+import vn.com.orchestration.foodios.dto.merchant.DeleteMerchantResponse;
 import vn.com.orchestration.foodios.entity.common.AddressSnapshot;
 import vn.com.orchestration.foodios.entity.merchant.ApplicationFormStatus;
 import vn.com.orchestration.foodios.entity.merchant.Merchant;
@@ -158,6 +162,109 @@ public class AdminMerchantServiceImpl implements AdminMerchantService {
 
     @Override
     @Transactional(readOnly = true)
+    public GetMerchantsResponse getMerchants(BaseRequest request, Integer pageNumber, Integer pageSize) {
+        authorizeAdmin(request);
+        validatePagination(request, pageNumber, pageSize);
+
+        PageRequest pageable = PageRequest.of(
+                pageNumber - 1,
+                pageSize,
+                Sort.by(Sort.Direction.DESC, "createdAt")
+        );
+
+        Page<Merchant> merchants = merchantRepository.findAll(pageable);
+
+        return GetMerchantsResponse.builder()
+                .result(ApiResult.builder().responseCode(SUCCESS_CODE).description(SUCCESS_MESSAGE).build())
+                .data(GetMerchantsResponse.GetMerchantsResponseData.builder()
+                        .items(merchants.getContent().stream().map(this::mapMerchantItem).toList())
+                        .pageNumber(pageNumber)
+                        .pageSize(pageSize)
+                        .totalItems(merchants.getTotalElements())
+                        .totalPages(merchants.getTotalPages())
+                        .hasNext(merchants.hasNext())
+                        .build())
+                .build();
+    }
+
+    private GetMerchantsResponse.MerchantPayload mapMerchantItem(Merchant merchant) {
+        return GetMerchantsResponse.MerchantPayload.builder()
+                .id(merchant.getId().toString())
+                .displayName(merchant.getDisplayName())
+                .legalName(merchant.getLegalName())
+                .slug(merchant.getSlug())
+                .logoUrl(merchant.getLogoUrl())
+                .description(merchant.getDescription())
+                .cuisineCategory(merchant.getCuisineCategory())
+                .contactEmail(merchant.getContactEmail())
+                .supportHotline(merchant.getSupportHotline())
+                .status(merchant.getStatus().name())
+                .createdAt(merchant.getCreatedAt() != null ? merchant.getCreatedAt().toString() : null)
+                .build();
+    }
+
+    @Override
+    @Transactional
+    public UpdateMerchantResponse updateMerchant(UpdateMerchantRequest request) {
+        authorizeAdmin(request);
+        var data = request.getData();
+        UUID id = UUID.fromString(data.getId());
+        Merchant merchant = merchantRepository.findById(id)
+                .orElseThrow(() -> businessException(request, RECORD_NOT_FOUND, "Merchant not found"));
+
+        if (data.getDisplayName() != null) merchant.setDisplayName(data.getDisplayName());
+        if (data.getLegalName() != null) merchant.setLegalName(data.getLegalName());
+        if (data.getDescription() != null) merchant.setDescription(data.getDescription());
+        if (data.getSlug() != null) {
+            String newSlug = slugify(data.getSlug());
+            if (!newSlug.equals(merchant.getSlug()) && merchantRepository.existsBySlug(newSlug)) {
+                throw businessException(request, DUPLICATE_ERROR, MERCHANT_SLUG_EXISTS_MESSAGE);
+            }
+            merchant.setSlug(newSlug);
+        }
+        if (data.getLogoUrl() != null) merchant.setLogoUrl(data.getLogoUrl());
+        if (data.getCuisineCategory() != null) merchant.setCuisineCategory(data.getCuisineCategory());
+        if (data.getContactEmail() != null) merchant.setContactEmail(data.getContactEmail());
+        if (data.getSupportHotline() != null) merchant.setSupportHotline(data.getSupportHotline());
+        if (data.getStatus() != null) {
+            try {
+                merchant.setStatus(MerchantStatus.valueOf(data.getStatus().toUpperCase()));
+            } catch (IllegalArgumentException e) {
+                throw businessException(request, INVALID_INPUT_ERROR, "Invalid status");
+            }
+        }
+
+        merchantRepository.save(merchant);
+
+        return UpdateMerchantResponse.builder()
+                .result(ApiResult.builder().responseCode(SUCCESS_CODE).description(SUCCESS_MESSAGE).build())
+                .data(UpdateMerchantResponse.UpdateMerchantResponseData.builder()
+                        .id(merchant.getId().toString())
+                        .status(merchant.getStatus().name())
+                        .build())
+                .build();
+    }
+
+    @Override
+    @Transactional
+    public DeleteMerchantResponse deleteMerchant(BaseRequest request, UUID id) {
+        authorizeAdmin(request);
+        Merchant merchant = merchantRepository.findById(id)
+                .orElseThrow(() -> businessException(request, RECORD_NOT_FOUND, "Merchant not found"));
+
+        merchantRepository.delete(merchant);
+
+        return DeleteMerchantResponse.builder()
+                .result(ApiResult.builder().responseCode(SUCCESS_CODE).description(SUCCESS_MESSAGE).build())
+                .data(DeleteMerchantResponse.DeleteMerchantResponseData.builder()
+                        .id(id.toString())
+                        .status("DELETED")
+                        .build())
+                .build();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public GetMerchantApplicationFormsResponse getMerchantApplicationForms(
             BaseRequest request,
             String status,
@@ -216,6 +323,7 @@ public class AdminMerchantServiceImpl implements AdminMerchantService {
                         .ownerPhone(form.getOwnerPhone())
                         .merchantName(form.getMerchantName())
                         .displayName(form.getDisplayName())
+                        .slug(form.getSlug())
                         .description(form.getDescription())
                         .taxCode(form.getTaxCode())
                         .businessRegistrationNumber(form.getBusinessRegistrationNumber())
@@ -266,7 +374,7 @@ public class AdminMerchantServiceImpl implements AdminMerchantService {
                         .bankAccountNumber(trimToNull(form.getBankAccountNumber()))
                         .bankBranch(trimToNull(form.getBankBranch()))
                         .build())
-                .slug(buildMerchantSlug(displayName))
+                .slug(resolveApprovedMerchantSlug(request, form, displayName))
                 .contactEmail(normalizeEmail(form.getContactEmail()))
                 .supportHotline(trimToNull(form.getContactPhone()))
                 .status(MerchantStatus.ACTIVE)
@@ -369,6 +477,7 @@ public class AdminMerchantServiceImpl implements AdminMerchantService {
                 .submittedBy(form.getSubmittedBy())
                 .legalName(form.getLegalName())
                 .displayName(form.getDisplayName())
+                .slug(form.getSlug())
                 .ownerFullName(form.getOwnerFullName())
                 .ownerEmail(form.getOwnerEmail())
                 .ownerPhone(form.getOwnerPhone())
@@ -419,6 +528,11 @@ public class AdminMerchantServiceImpl implements AdminMerchantService {
         String contactEmail = normalizeEmail(form.getContactEmail());
         if (contactEmail != null && merchantRepository.existsByContactEmailIgnoreCase(contactEmail)) {
             throw businessException(request, DUPLICATE_ERROR, MERCHANT_EXISTS_MESSAGE);
+        }
+
+        String slug = trimToNull(form.getSlug());
+        if (slug != null && (merchantRepository.existsBySlug(slug) || storeRepository.existsBySlug(slug))) {
+            throw businessException(request, DUPLICATE_ERROR, MERCHANT_SLUG_EXISTS_MESSAGE);
         }
     }
 
@@ -484,6 +598,18 @@ public class AdminMerchantServiceImpl implements AdminMerchantService {
             sequence++;
         }
         return candidate;
+    }
+
+    private String resolveApprovedMerchantSlug(BaseRequest request, MerchantApplicationForm form, String displayName) {
+        String requestedSlug = trimToNull(form.getSlug());
+        if (requestedSlug == null) {
+            return buildMerchantSlug(displayName);
+        }
+        String normalizedSlug = slugify(requestedSlug);
+        if (merchantRepository.existsBySlug(normalizedSlug) || storeRepository.existsBySlug(normalizedSlug)) {
+            throw businessException(request, DUPLICATE_ERROR, MERCHANT_SLUG_EXISTS_MESSAGE);
+        }
+        return normalizedSlug;
     }
 
     private String slugify(String value) {

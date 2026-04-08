@@ -12,13 +12,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import vn.com.orchestration.foodios.dto.common.BaseRequest;
-import vn.com.orchestration.foodios.dto.merchant.ApproveMerchantApplicationRequest;
-import vn.com.orchestration.foodios.dto.merchant.CreateMerchantRequest;
-import vn.com.orchestration.foodios.dto.merchant.CreateMerchantResponse;
-import vn.com.orchestration.foodios.dto.merchant.GetMerchantApplicationFormDetailResponse;
-import vn.com.orchestration.foodios.dto.merchant.GetMerchantApplicationFormsResponse;
-import vn.com.orchestration.foodios.dto.merchant.RejectMerchantApplicationRequest;
-import vn.com.orchestration.foodios.dto.merchant.ReviewMerchantApplicationResponse;
+import vn.com.orchestration.foodios.dto.merchant.*;
 import vn.com.orchestration.foodios.exception.ResponseUtil;
 import vn.com.orchestration.foodios.service.merchant.AdminMerchantService;
 import vn.com.orchestration.foodios.utils.HttpUtils;
@@ -32,6 +26,9 @@ import static vn.com.orchestration.foodios.constant.ApiConstant.APPLICATIONS_PAT
 import static vn.com.orchestration.foodios.constant.ApiConstant.APPROVE_PATH;
 import static vn.com.orchestration.foodios.constant.ApiConstant.MERCHANTS_PATH;
 import static vn.com.orchestration.foodios.constant.ApiConstant.REJECT_PATH;
+import static vn.com.orchestration.foodios.constant.ApiConstant.UPDATE_PATH;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.DeleteMapping;
 
 @RestController
 @RequestMapping(API_PATH + API_VERSION + ADMIN_PATH + MERCHANTS_PATH)
@@ -39,6 +36,29 @@ import static vn.com.orchestration.foodios.constant.ApiConstant.REJECT_PATH;
 public class AdminMerchantController {
 
     private final AdminMerchantService adminMerchantService;
+
+    @GetMapping
+    public ResponseEntity<GetMerchantsResponse> getMerchants(
+            HttpServletRequest request,
+            @RequestParam(defaultValue = "1") Integer pageNumber,
+            @RequestParam(defaultValue = "20") Integer pageSize) {
+        BaseRequest baseRequest = ResponseUtil.getBaseRequestOrDefault(request);
+        GetMerchantsResponse response = adminMerchantService.getMerchants(baseRequest, pageNumber, pageSize);
+        return HttpUtils.buildResponse(baseRequest, response);
+    }
+
+    @PutMapping(UPDATE_PATH)
+    public ResponseEntity<UpdateMerchantResponse> updateMerchant(@Valid @RequestBody UpdateMerchantRequest request) {
+        UpdateMerchantResponse response = adminMerchantService.updateMerchant(request);
+        return HttpUtils.buildResponse(request, response);
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<DeleteMerchantResponse> deleteMerchant(@PathVariable UUID id, HttpServletRequest request) {
+        BaseRequest baseRequest = ResponseUtil.getBaseRequestOrDefault(request);
+        DeleteMerchantResponse response = adminMerchantService.deleteMerchant(baseRequest, id);
+        return HttpUtils.buildResponse(baseRequest, response);
+    }
 
     @PostMapping
     public ResponseEntity<CreateMerchantResponse> createMerchant(@Valid @RequestBody CreateMerchantRequest request) {

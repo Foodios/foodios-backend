@@ -17,11 +17,17 @@ public interface OrderRepository extends JpaRepository<FoodOrder, UUID> {
 
   List<FoodOrder> findByCustomerIdOrderByCreatedAtDesc(UUID customerId);
 
+  Page<FoodOrder> findByCustomerId(UUID customerId, Pageable pageable);
+
+  Page<FoodOrder> findByCustomerIdAndStatus(UUID customerId, OrderStatus status, Pageable pageable);
+
   List<FoodOrder> findByStoreId(UUID storeId);
 
   Page<FoodOrder> findByStoreMerchantId(UUID merchantId, Pageable pageable);
 
   Page<FoodOrder> findByStoreMerchantIdAndStatus(UUID merchantId, OrderStatus status, Pageable pageable);
+
+  Page<FoodOrder> findByStoreMerchantIdAndStatusIn(UUID merchantId, List<OrderStatus> statuses, Pageable pageable);
 
   Page<FoodOrder> findByStatus(OrderStatus status, Pageable pageable);
 
