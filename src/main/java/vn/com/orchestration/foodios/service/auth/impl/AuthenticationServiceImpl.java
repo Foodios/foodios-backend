@@ -28,7 +28,7 @@ import vn.com.orchestration.foodios.exception.BusinessException;
 import vn.com.orchestration.foodios.jwt.JwtService;
 import vn.com.orchestration.foodios.repository.UserOtpRepository;
 import vn.com.orchestration.foodios.repository.UserRepository;
-import vn.com.orchestration.foodios.service.auth.AuthService;
+import vn.com.orchestration.foodios.service.auth.AuthenticationService;
 import vn.com.orchestration.foodios.service.auth.OtpService;
 import vn.com.orchestration.foodios.service.auth.RefreshTokenService;
 import vn.com.orchestration.foodios.service.auth.UserAuthorizationService;
@@ -66,7 +66,7 @@ import static vn.com.orchestration.foodios.constant.ErrorConstant.USER_NOT_FOUND
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class AuthServiceImpl implements AuthService {
+public class AuthenticationServiceImpl implements AuthenticationService {
 
     private final UserRepository userRepository;
     private final UserOtpRepository userOtpRepository;
@@ -141,18 +141,17 @@ public class AuthServiceImpl implements AuthService {
             throw businessException(request, SYSTEM_ERROR, exception.getMessage());
         }
 
-        RegisterResponse response = new RegisterResponse();
-        response.setData(
-                RegisterResponse.RegisterResponseData.builder()
-                        .id(user.getId())
-                        .username(user.getUsername())
-                        .email(user.getEmail())
-                        .phone(user.getPhone())
-                        .status(user.getStatus())
-                        .build()
-        );
-        response.setResult(successResult());
-        return response;
+        return RegisterResponse.builder()
+                .data(
+                        RegisterResponse.RegisterResponseData.builder()
+                                .id(user.getId())
+                                .username(user.getUsername())
+                                .email(user.getEmail())
+                                .phone(user.getPhone())
+                                .status(user.getStatus())
+                                .build())
+                .result(successResult())
+                .build();
     }
 
     @Override
@@ -269,10 +268,10 @@ public class AuthServiceImpl implements AuthService {
         user.setStatus(UserStatus.ACTIVE);
         userRepository.save(user);
 
-        VerifyEmailOtpResponse response = new VerifyEmailOtpResponse();
-        response.setData(VerifyEmailResponseData.builder().verified(true).build());
-        response.setResult(successResult());
-        return response;
+        return VerifyEmailOtpResponse.builder()
+                .data(VerifyEmailResponseData.builder().verified(true).build())
+                .result(successResult())
+                .build();
     }
 
     @Override
@@ -325,18 +324,16 @@ public class AuthServiceImpl implements AuthService {
 
         refreshTokenService.saveNew(user, newRefreshToken);
 
-        RefreshTokenResponse response = new RefreshTokenResponse();
-        response.setData(
-                RefreshTokenResponse.RefreshTokenResponseData.builder()
+        return RefreshTokenResponse.builder()
+                .data(RefreshTokenResponse.RefreshTokenResponseData.builder()
                         .accessToken(newAccessToken)
                         .refreshToken(newRefreshToken)
                         .userId(user.getId())
                         .accessTokenExpiredAt(accessTokenExpiredAt)
                         .refreshTokenExpiredAt(refreshTokenExpiredAt)
-                        .build()
-        );
-        response.setResult(successResult());
-        return response;
+                        .build())
+                .result(successResult())
+                .build();
     }
 
     @Override

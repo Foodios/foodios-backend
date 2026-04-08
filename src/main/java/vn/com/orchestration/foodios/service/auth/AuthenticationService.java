@@ -11,7 +11,7 @@ import vn.com.orchestration.foodios.dto.auth.RegisterResponse;
 import vn.com.orchestration.foodios.dto.auth.VerifyEmailOtpRequest;
 import vn.com.orchestration.foodios.dto.auth.VerifyEmailOtpResponse;
 
-public interface AuthService {
+public interface AuthenticationService {
     RegisterResponse register(RegisterRequest request);
 
     LoginResponse login(LoginRequest request);
