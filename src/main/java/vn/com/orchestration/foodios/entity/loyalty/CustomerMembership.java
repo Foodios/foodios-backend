@@ -10,6 +10,8 @@ import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.time.OffsetDateTime;
+
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
@@ -46,11 +48,11 @@ public class CustomerMembership extends BaseEntity {
 
   @Column(name = "joined_at", nullable = false)
   @Builder.Default
-  private Instant joinedAt = Instant.now();
+  private OffsetDateTime joinedAt = OffsetDateTime.now();
 
   @Column(name = "promoted_at", nullable = false)
   @Builder.Default
-  private Instant promotedAt = Instant.now();
+  private OffsetDateTime promotedAt = OffsetDateTime.now();
 
   @Column(name = "discount_percent", nullable = false, precision = 5, scale = 2)
   @Builder.Default

@@ -23,13 +23,18 @@ public class ErrorConstant {
     public static final String SUCCESS_MESSAGE = "Success";
     public static final String DRIVER_NOT_FOUND_MESSAGE = "Driver Profile not found";
     public static final String USER_NOT_FOUND_MESSAGE = "User Profile not found";
+    public static final String MEMBERSHIP_NOT_FOUND_MESSAGE = "Membership Profile not found";
     public static final String INVALID_HTTP_REQUEST_RESOURCE_ERROR = "4000";
     public static final String INVALID_HTTP_REQUEST_RESOURCE_ERROR_MESSAGE = "Resource %s path is not exists";
     public static final String INVALID_INPUT_ERROR = "0310";
+    public static final String INVALID_USER_MESSAGE = "Invalid userId";
     public static final String SEAT_NOT_AVAILABLE = "Seat %s is not available";
     public static final String INVALID_INPUT_MESSAGE = "Invalid Input";
     public static final String INVALID_REQUEST_TIMESTAMP = "5186";
     public static final String DUPLICATE_ERROR = "9400";
+    public static final String MERCHANT_EXISTS = "Merchant %s already exists";
+    public static final String PHONE_NUMBER_EXISTS = "Phone Number already exists";
+
     public static final String DUPLICATE_OPERATION_POINT_MESSAGE = "Operation point with this code already exists";
     public static final String DUPLICATE_PROVINCE = "Province is already exists by %s";
     public static final String DUPLICATE_USER_ROLE_MESSAGE = "User already has this role";
@@ -53,9 +58,13 @@ public class ErrorConstant {
     public static final String PHONE_NUMBER_EXISTS_MESSAGE = "Phone number already exists";
     public static final String INVALID_USERNAME_OR_PASSWORD_MESSAGE = "Invalid username or password";
     public static final String USER_NOT_ACTIVE_MESSAGE = "User is not active";
+    public static final String OPERATION_NOT_ALLOWED = "4030";
     public static final String EMAIL_NOT_VERIFIED_MESSAGE = "Email is not verified";
     public static final String OTP_EXPIRED_OR_NOT_FOUND_MESSAGE = "OTP expired or not found";
     public static final String INVALID_OTP_MESSAGE = "Invalid OTP";
+    public static final String EMAIL_EXISTS = "Email already exists";
+
+    public static final String USER_EXISTS = "User already exists";
     public static final String TOO_MANY_ATTEMPTS_MESSAGE = "Too many attempts";
     public static final String REFRESH_TOKEN_NOT_FOUND_MESSAGE = "Refresh token not found";
     public static final String INVALID_REFRESH_TOKEN_MESSAGE = "Invalid refresh token";

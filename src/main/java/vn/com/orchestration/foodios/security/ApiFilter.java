@@ -14,6 +14,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import org.springframework.web.util.ContentCachingResponseWrapper;
 import vn.com.orchestration.foodios.config.RequestAttributes;
 import vn.com.orchestration.foodios.dto.common.BaseRequest;
+import vn.com.orchestration.foodios.log.SystemLog;
 import vn.com.orchestration.foodios.security.envelope.RequestEnvelopeExtractor;
 
 import java.io.IOException;
@@ -25,6 +26,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class ApiFilter extends OncePerRequestFilter {
 
+    private final SystemLog sLog = SystemLog.getLogger(this.getClass());
     private final ObjectMapper objectMapper;
 
     @Override
@@ -45,9 +47,7 @@ public class ApiFilter extends OncePerRequestFilter {
         if (!multipartRequest) {
             requestToUse = new CachedHttpServletRequestWrapper(request);
         }
-
         ContentCachingResponseWrapper cachedResponse = new ContentCachingResponseWrapper(response);
-
         try {
             BaseRequest baseRequest = extractBaseRequest(requestToUse, multipartRequest);
             request.setAttribute(RequestAttributes.REQUEST_ID, baseRequest.getRequestId());
@@ -65,7 +65,7 @@ public class ApiFilter extends OncePerRequestFilter {
             filterChain.doFilter(requestToUse, cachedResponse);
         } finally {
             String responseMessage = new String(cachedResponse.getContentAsByteArray(), StandardCharsets.UTF_8);
-            log.info("{}", responseMessage);
+            sLog.info("{}", responseMessage);
             cachedResponse.copyBodyToResponse();
         }
     }

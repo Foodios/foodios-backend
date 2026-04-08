@@ -10,6 +10,7 @@ import vn.com.orchestration.foodios.entity.auth.OtpChannel;
 import vn.com.orchestration.foodios.entity.auth.OtpPurpose;
 import vn.com.orchestration.foodios.entity.auth.UserOtp;
 import vn.com.orchestration.foodios.entity.user.User;
+import vn.com.orchestration.foodios.log.SystemLog;
 import vn.com.orchestration.foodios.repository.UserOtpRepository;
 import vn.com.orchestration.foodios.service.auth.OtpService;
 import vn.com.orchestration.foodios.service.notification.EmailMessageCommand;
@@ -26,7 +27,7 @@ public class OtpServiceImpl implements OtpService {
 
     private static final Duration EMAIL_OTP_TTL = Duration.ofMinutes(10);
     private static final SecureRandom RNG = new SecureRandom();
-
+    private final SystemLog sLog = SystemLog.getLogger(this.getClass());
     private final UserOtpRepository userOtpRepository;
     private final PasswordEncoder passwordEncoder;
     private final EmailService emailService;
@@ -63,7 +64,7 @@ public class OtpServiceImpl implements OtpService {
                 .build();
 
         emailService.sendEmail(emailMessageCommand);
-        log.info("Generated OTP purpose={} userId={}", purpose, user.getId());
+        sLog.info("Generated OTP purpose={} userId={}", purpose, user.getId());
     }
 
     private static String generateNumericOtp(int length) {

@@ -20,7 +20,8 @@ import vn.com.orchestration.foodios.dto.auth.VerifyEmailOtpResponse;
 import vn.com.orchestration.foodios.service.auth.AuthenticationService;
 import vn.com.orchestration.foodios.utils.HttpUtils;
 
-import static vn.com.orchestration.foodios.constant.ApiConstant.API_PREFIX;
+import static vn.com.orchestration.foodios.constant.ApiConstant.API_PATH;
+import static vn.com.orchestration.foodios.constant.ApiConstant.API_VERSION;
 import static vn.com.orchestration.foodios.constant.ApiConstant.AUTHENTICATION_PATH;
 import static vn.com.orchestration.foodios.constant.ApiConstant.LOGIN_PATH;
 import static vn.com.orchestration.foodios.constant.ApiConstant.LOGOUT_PATH;
@@ -29,7 +30,7 @@ import static vn.com.orchestration.foodios.constant.ApiConstant.REGISTER_PATH;
 import static vn.com.orchestration.foodios.constant.ApiConstant.VERIFY_EMAIL_PATH;
 
 @RestController
-@RequestMapping(API_PREFIX + AUTHENTICATION_PATH)
+@RequestMapping(API_PATH + API_VERSION + AUTHENTICATION_PATH)
 @RequiredArgsConstructor
 public class AuthenticationController {
 

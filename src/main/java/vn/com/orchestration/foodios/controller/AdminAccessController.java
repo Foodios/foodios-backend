@@ -19,13 +19,14 @@ import vn.com.orchestration.foodios.service.access.AdminAccessService;
 import vn.com.orchestration.foodios.utils.HttpUtils;
 
 import static vn.com.orchestration.foodios.constant.ApiConstant.ADMIN_PATH;
-import static vn.com.orchestration.foodios.constant.ApiConstant.API_PREFIX;
+import static vn.com.orchestration.foodios.constant.ApiConstant.API_PATH;
+import static vn.com.orchestration.foodios.constant.ApiConstant.API_VERSION;
 import static vn.com.orchestration.foodios.constant.ApiConstant.AUTHORITIES_PATH;
 import static vn.com.orchestration.foodios.constant.ApiConstant.ROLES_PATH;
 import static vn.com.orchestration.foodios.constant.ApiConstant.USERS_PATH;
 
 @RestController
-@RequestMapping(API_PREFIX + ADMIN_PATH)
+@RequestMapping(API_PATH + API_VERSION + ADMIN_PATH)
 @RequiredArgsConstructor
 public class AdminAccessController {
 

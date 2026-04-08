@@ -16,6 +16,7 @@ import org.hibernate.annotations.UuidGenerator;
 import org.hibernate.proxy.HibernateProxy;
 
 import java.time.Instant;
+import java.time.OffsetDateTime;
 import java.util.Objects;
 import java.util.UUID;
 
@@ -35,11 +36,11 @@ public abstract class BaseEntity {
 
   @CreationTimestamp
   @Column(name = "created_at", nullable = false, updatable = false)
-  private Instant createdAt;
+  private OffsetDateTime createdAt;
 
   @UpdateTimestamp
   @Column(name = "updated_at", nullable = false)
-  private Instant updatedAt;
+  private OffsetDateTime updatedAt;
 
   @Override
   public final boolean equals(Object o) {

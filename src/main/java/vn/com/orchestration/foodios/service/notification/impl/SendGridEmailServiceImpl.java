@@ -9,6 +9,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 import vn.com.orchestration.foodios.config.SendGridMailProperties;
 import vn.com.orchestration.foodios.entity.auth.OtpPurpose;
+import vn.com.orchestration.foodios.log.SystemLog;
 import vn.com.orchestration.foodios.service.notification.EmailMessageCommand;
 import vn.com.orchestration.foodios.service.notification.EmailService;
 import vn.com.orchestration.foodios.service.notification.EmailTemplateService;
@@ -29,7 +30,7 @@ import java.util.Map;
 public class SendGridEmailServiceImpl implements EmailService {
 
     private static final URI SENDGRID_SEND_URI = URI.create("https://api.sendgrid.com/v3/mail/send");
-
+    private final SystemLog sLog = SystemLog.getLogger(this.getClass());
     private final EmailTemplateService emailTemplateService;
     private final SendGridMailProperties properties;
     private final ObjectMapper objectMapper;
@@ -67,7 +68,7 @@ public class SendGridEmailServiceImpl implements EmailService {
 
         try {
             HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
-            log.info("Sending Email Response: status={}, body={}", response.statusCode(), response.body());
+            sLog.info("Sending Email Response: status={}, body={}", response.statusCode(), response.body());
             if (response.statusCode() < 200 || response.statusCode() >= 300) {
                 throw new IllegalStateException(
                         "SendGrid send mail failed. Status=%s, body=%s"

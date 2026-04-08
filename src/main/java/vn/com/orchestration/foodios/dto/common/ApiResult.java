@@ -6,6 +6,9 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import static vn.com.orchestration.foodios.constant.ErrorConstant.SUCCESS_CODE;
+import static vn.com.orchestration.foodios.constant.ErrorConstant.SUCCESS_MESSAGE;
+
 @Getter
 @Setter
 @NoArgsConstructor

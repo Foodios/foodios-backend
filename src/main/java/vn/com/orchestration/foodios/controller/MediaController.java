@@ -13,12 +13,13 @@ import vn.com.orchestration.foodios.dto.media.UploadMediaResponse;
 import vn.com.orchestration.foodios.service.media.MediaService;
 import vn.com.orchestration.foodios.utils.HttpUtils;
 
-import static vn.com.orchestration.foodios.constant.ApiConstant.API_PREFIX;
+import static vn.com.orchestration.foodios.constant.ApiConstant.API_PATH;
+import static vn.com.orchestration.foodios.constant.ApiConstant.API_VERSION;
 import static vn.com.orchestration.foodios.constant.ApiConstant.MEDIA_PATH;
 import static vn.com.orchestration.foodios.constant.ApiConstant.UPLOAD_PATH;
 
 @RestController
-@RequestMapping(API_PREFIX + MEDIA_PATH)
+@RequestMapping(API_PATH + API_VERSION + MEDIA_PATH)
 @RequiredArgsConstructor
 public class MediaController {
 

@@ -9,6 +9,8 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.MapsId;
 import jakarta.persistence.Table;
 import java.time.Instant;
+import java.time.OffsetDateTime;
+
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -43,5 +45,5 @@ public class UserRole {
 
     @Builder.Default
     @Column(name = "assigned_at", nullable = false)
-    private Instant assignedAt = Instant.now();
+    private OffsetDateTime assignedAt = OffsetDateTime.now();
 }

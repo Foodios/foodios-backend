@@ -11,6 +11,7 @@ import vn.com.orchestration.foodios.repository.UserRoleRepository;
 import vn.com.orchestration.foodios.service.auth.UserRoleService;
 
 import java.time.Instant;
+import java.time.OffsetDateTime;
 
 @Service
 public class UserRoleServiceImpl implements UserRoleService {
@@ -49,7 +50,7 @@ public class UserRoleServiceImpl implements UserRoleService {
                 .id(id)
                 .user(user)
                 .role(role)
-                .assignedAt(Instant.now())
+                .assignedAt(OffsetDateTime.now())
                 .build();
         userRoleRepository.saveAndFlush(userRole);
     }

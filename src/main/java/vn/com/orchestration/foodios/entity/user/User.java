@@ -46,7 +46,10 @@ public class User extends BaseEntity {
 
   @Builder.Default
   @Column(name = "profile_completed", nullable = false)
-  private boolean profileCompleted = true;
+  private boolean profileCompleted = false;
+
+  @Column(name = "AVATAR_URL")
+  private String avatarUrl;
 
   @Enumerated(EnumType.STRING)
   @Column(name = "status", nullable = false, length = 16)

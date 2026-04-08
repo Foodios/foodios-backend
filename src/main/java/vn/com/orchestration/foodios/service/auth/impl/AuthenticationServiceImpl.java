@@ -16,7 +16,6 @@ import vn.com.orchestration.foodios.dto.auth.RegisterResponse;
 import vn.com.orchestration.foodios.dto.auth.VerifyEmailOtpRequest;
 import vn.com.orchestration.foodios.dto.auth.VerifyEmailOtpResponse;
 import vn.com.orchestration.foodios.dto.auth.VerifyEmailResponseData;
-import vn.com.orchestration.foodios.dto.common.ApiResult;
 import vn.com.orchestration.foodios.dto.common.BaseRequest;
 import vn.com.orchestration.foodios.entity.auth.OtpPurpose;
 import vn.com.orchestration.foodios.entity.auth.RefreshToken;
@@ -26,6 +25,7 @@ import vn.com.orchestration.foodios.entity.user.User;
 import vn.com.orchestration.foodios.entity.user.UserStatus;
 import vn.com.orchestration.foodios.exception.BusinessException;
 import vn.com.orchestration.foodios.jwt.JwtService;
+import vn.com.orchestration.foodios.log.SystemLog;
 import vn.com.orchestration.foodios.repository.UserOtpRepository;
 import vn.com.orchestration.foodios.repository.UserRepository;
 import vn.com.orchestration.foodios.service.auth.AuthenticationService;
@@ -34,6 +34,7 @@ import vn.com.orchestration.foodios.service.auth.RefreshTokenService;
 import vn.com.orchestration.foodios.service.auth.UserAuthorizationService;
 import vn.com.orchestration.foodios.service.auth.UserRoleService;
 import vn.com.orchestration.foodios.service.loyalty.CustomerMembershipService;
+import vn.com.orchestration.foodios.utils.ApiResultFactory;
 import vn.com.orchestration.foodios.utils.ExceptionUtils;
 
 import java.time.Instant;
@@ -55,8 +56,6 @@ import static vn.com.orchestration.foodios.constant.ErrorConstant.PHONE_NUMBER_E
 import static vn.com.orchestration.foodios.constant.ErrorConstant.RECORD_NOT_FOUND;
 import static vn.com.orchestration.foodios.constant.ErrorConstant.REFRESH_TOKEN_EXPIRED_MESSAGE;
 import static vn.com.orchestration.foodios.constant.ErrorConstant.REFRESH_TOKEN_NOT_FOUND_MESSAGE;
-import static vn.com.orchestration.foodios.constant.ErrorConstant.SUCCESS_CODE;
-import static vn.com.orchestration.foodios.constant.ErrorConstant.SUCCESS_MESSAGE;
 import static vn.com.orchestration.foodios.constant.ErrorConstant.SYSTEM_ERROR;
 import static vn.com.orchestration.foodios.constant.ErrorConstant.TOO_MANY_ATTEMPTS_MESSAGE;
 import static vn.com.orchestration.foodios.constant.ErrorConstant.USERNAME_EXISTS_MESSAGE;
@@ -77,11 +76,14 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     private final CustomerMembershipService customerMembershipService;
     private final JwtService jwtService;
     private final RefreshTokenService refreshTokenService;
+    private final ApiResultFactory apiResultFactory;
+    private final SystemLog sLog = SystemLog.getLogger(this.getClass());
+
 
     @Override
     @Transactional
     public RegisterResponse register(RegisterRequest request) {
-        log.info(
+        sLog.info(
                 "[REGISTER] requestId={}, username={}, email={}, phone={}",
                 request.getRequestId(),
                 request.getData() != null ? request.getData().getUsername() : null,
@@ -105,7 +107,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                 try {
                     otpService.resendEmailVerificationOtpRequiresNew(existingUser);
                 } catch (Exception exception) {
-                    log.info("[REGISTER] Resend verify email failed for VERIFYING userId={}", existingUser.getId(), exception);
+                    sLog.info("[REGISTER] Resend verify email failed for VERIFYING userId={}", existingUser.getId(), exception);
                 }
             }
             throw businessException(request, DUPLICATE_ERROR, EMAIL_EXISTS_MESSAGE);
@@ -123,11 +125,12 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                 .username(username)
                 .email(email)
                 .phone(phone)
+                .fullName(data.getFullName())
                 .passwordHash(passwordEncoder.encode(data.getPassword()))
                 .status(UserStatus.VERIFYING)
+                .createdAt(OffsetDateTime.now())
                 .build();
         userRepository.saveAndFlush(user);
-
         try {
             userRoleService.assignDefaultCustomerRole(user);
             customerMembershipService.createForNewCustomer(user);
@@ -150,14 +153,14 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                                 .phone(user.getPhone())
                                 .status(user.getStatus())
                                 .build())
-                .result(successResult())
+                .result(apiResultFactory.buildSuccess())
                 .build();
     }
 
     @Override
     @Transactional
     public LoginResponse login(LoginRequest request) {
-        log.info(
+        sLog.info(
                 "[LOGIN] requestId={}, identifier={}",
                 request.getRequestId(),
                 request.getData() != null ? request.getData().getIdentifier() : null
@@ -198,7 +201,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                 .requestId(request.getRequestId())
                 .requestDateTime(request.getRequestDateTime())
                 .channel(request.getChannel())
-                .result(successResult())
+                .result(apiResultFactory.buildSuccess())
                 .data(LoginResponse.LoginResponseData.builder()
                         .accessToken(accessToken)
                         .refreshToken(refreshToken)
@@ -216,7 +219,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     @Override
     @Transactional
     public VerifyEmailOtpResponse verifyEmailOtp(VerifyEmailOtpRequest request) {
-        log.info(
+        sLog.info(
                 "[VERIFY_EMAIL] requestId={}, email={}",
                 request.getRequestId(),
                 request.getData() != null ? request.getData().getEmail() : null
@@ -236,7 +239,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         if (UserStatus.ACTIVE.equals(user.getStatus())) {
             VerifyEmailOtpResponse response = new VerifyEmailOtpResponse();
             response.setData(VerifyEmailResponseData.builder().verified(true).build());
-            response.setResult(successResult());
+            response.setResult(apiResultFactory.buildSuccess());
             return response;
         }
         if (!UserStatus.VERIFYING.equals(user.getStatus())) {
@@ -270,14 +273,14 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
         return VerifyEmailOtpResponse.builder()
                 .data(VerifyEmailResponseData.builder().verified(true).build())
-                .result(successResult())
+                .result(apiResultFactory.buildSuccess())
                 .build();
     }
 
     @Override
     @Transactional
     public RefreshTokenResponse refreshToken(RefreshTokenRequest request) {
-        log.info("[REFRESH_TOKEN] requestId={}", request.getRequestId());
+        sLog.info("[REFRESH_TOKEN] requestId={}", request.getRequestId());
 
         RefreshTokenRequest.RefreshTokenRequestData data = request.getData();
         if (data == null) {
@@ -332,14 +335,14 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                         .accessTokenExpiredAt(accessTokenExpiredAt)
                         .refreshTokenExpiredAt(refreshTokenExpiredAt)
                         .build())
-                .result(successResult())
+                .result(apiResultFactory.buildSuccess())
                 .build();
     }
 
     @Override
     @Transactional
     public LogoutResponse logout(LogoutRequest request) {
-        log.info("[LOGOUT] requestId={}", request.getRequestId());
+        sLog.info("[LOGOUT] requestId={}", request.getRequestId());
 
         LogoutRequest.LogoutRequestData data = request.getData();
         if (data == null) {
@@ -360,12 +363,8 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
         LogoutResponse response = new LogoutResponse();
         response.setData(LogoutResponse.LogoutResponseData.builder().revoked(revoked).build());
-        response.setResult(successResult());
+        response.setResult(apiResultFactory.buildSuccess());
         return response;
-    }
-
-    private static ApiResult successResult() {
-        return ApiResult.builder().responseCode(SUCCESS_CODE).description(SUCCESS_MESSAGE).build();
     }
 
     private static BusinessException businessException(BaseRequest request, String code, String message) {

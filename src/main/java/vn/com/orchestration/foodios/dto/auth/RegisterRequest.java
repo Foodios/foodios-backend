@@ -27,20 +27,28 @@ public class RegisterRequest extends BaseRequest {
   @Setter
   public static class RegisterRequestData {
     @NotBlank
+    @NotNull
     @Size(min = 3, max = 60)
     private String username;
 
     @NotBlank
+    @NotNull
     @Size(min = 8, max = 72)
     private String password;
 
     @NotBlank
     @Email
+    @NotNull
     @Size(max = 254)
     private String email;
 
     @NotBlank
+    @NotNull
     @Size(min = 8, max = 32)
     private String phone;
+
+    @NotBlank
+    @NotNull
+    private String fullName;
   }
 }

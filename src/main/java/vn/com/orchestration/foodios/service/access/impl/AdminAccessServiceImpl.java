@@ -30,6 +30,7 @@ import vn.com.orchestration.foodios.service.access.AdminAccessService;
 import vn.com.orchestration.foodios.utils.ExceptionUtils;
 
 import java.time.Instant;
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -158,7 +159,7 @@ public class AdminAccessServiceImpl implements AdminAccessService {
                 .id(UserRoleId.builder().userId(user.getId()).roleId(role.getId()).build())
                 .user(user)
                 .role(role)
-                .assignedAt(Instant.now())
+                .assignedAt(OffsetDateTime.now())
                 .build();
         userRoleRepository.saveAndFlush(userRole);
 

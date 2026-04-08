@@ -18,6 +18,7 @@ import vn.com.orchestration.foodios.entity.user.User;
 import vn.com.orchestration.foodios.exception.BusinessException;
 import vn.com.orchestration.foodios.jwt.identity.IdentityUserContext;
 import vn.com.orchestration.foodios.jwt.identity.IdentityUserContextProvider;
+import vn.com.orchestration.foodios.log.SystemLog;
 import vn.com.orchestration.foodios.repository.CategoryRepository;
 import vn.com.orchestration.foodios.repository.MerchantMemberRepository;
 import vn.com.orchestration.foodios.repository.ProductRepository;
@@ -53,6 +54,7 @@ public class MerchantProductServiceImpl implements MerchantProductService {
     private final UserRepository userRepository;
     private final MerchantMemberRepository merchantMemberRepository;
     private final IdentityUserContextProvider identityUserContextProvider;
+    private final SystemLog sLog = SystemLog.getLogger(this.getClass());
 
     @Override
     @Transactional
@@ -62,7 +64,7 @@ public class MerchantProductServiceImpl implements MerchantProductService {
             throw businessException(request, INVALID_INPUT_ERROR, "Missing data");
         }
 
-        log.info(
+        sLog.info(
                 "[CREATE_PRODUCT] requestId={}, storeId={}, categoryId={}, name={}",
                 request.getRequestId(),
                 data.getStoreId(),

@@ -1,16 +1,16 @@
 package vn.com.orchestration.foodios.exception;
 
 import jakarta.servlet.http.HttpServletRequest;
+import lombok.experimental.UtilityClass;
 import vn.com.orchestration.foodios.config.RequestAttributes;
 import vn.com.orchestration.foodios.dto.common.BaseRequest;
 
 import java.util.List;
 
-final class ResponseUtil {
 
-    private ResponseUtil() {}
-
-    private static String firstNonBlank(String... values) {
+@UtilityClass
+public class ResponseUtil {
+    private String firstNonBlank(String... values) {
         for (String v : values) {
             if (v != null && !v.isBlank()) {
                 return v;
@@ -19,7 +19,7 @@ final class ResponseUtil {
         return null;
     }
 
-    private static String headerAny(HttpServletRequest request, List<String> names) {
+    private String headerAny(HttpServletRequest request, List<String> names) {
         for (String n : names) {
             String v = request.getHeader(n);
             if (v != null && !v.isBlank()) return v;
@@ -27,7 +27,7 @@ final class ResponseUtil {
         return null;
     }
 
-    static BaseRequest getBaseRequestOrDefault(HttpServletRequest request) {
+    public BaseRequest getBaseRequestOrDefault(HttpServletRequest request) {
         String requestId =
                 firstNonBlank(
                         (String) request.getAttribute(RequestAttributes.REQUEST_ID),

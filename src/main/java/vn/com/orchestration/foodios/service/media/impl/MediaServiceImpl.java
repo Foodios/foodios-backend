@@ -13,6 +13,7 @@ import vn.com.orchestration.foodios.dto.common.BaseRequest;
 import vn.com.orchestration.foodios.dto.media.UploadMediaRequest;
 import vn.com.orchestration.foodios.dto.media.UploadMediaResponse;
 import vn.com.orchestration.foodios.exception.BusinessException;
+import vn.com.orchestration.foodios.log.SystemLog;
 import vn.com.orchestration.foodios.service.media.MediaService;
 import vn.com.orchestration.foodios.utils.ExceptionUtils;
 
@@ -33,6 +34,7 @@ public class MediaServiceImpl implements MediaService {
 
     private final Cloudinary cloudinary;
     private final CloudinaryProperties cloudinaryProperties;
+    private final SystemLog sLog = SystemLog.getLogger(this.getClass());
 
     @Override
     @Transactional(readOnly = true)
@@ -79,7 +81,7 @@ public class MediaServiceImpl implements MediaService {
             );
             return response;
         } catch (IOException exception) {
-            log.error("[MEDIA_UPLOAD] requestId={} upload failed", request.getRequestId(), exception);
+            sLog.error("[MEDIA_UPLOAD] requestId={} upload failed", request.getRequestId(), exception);
             throw businessException(request, FILE_UPLOAD_ERROR, FILE_UPLOAD_ERROR_MESSAGE);
         }
     }

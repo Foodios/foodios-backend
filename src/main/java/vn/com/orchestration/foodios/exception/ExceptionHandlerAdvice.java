@@ -18,6 +18,7 @@ import org.springframework.web.servlet.resource.NoResourceFoundException;
 import vn.com.orchestration.foodios.dto.common.ApiResult;
 import vn.com.orchestration.foodios.dto.common.BaseRequest;
 import vn.com.orchestration.foodios.dto.common.BaseResponse;
+import vn.com.orchestration.foodios.log.SystemLog;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -36,6 +37,7 @@ import static vn.com.orchestration.foodios.constant.ErrorConstant.TIMEOUT_ERROR;
 @Slf4j
 @RestControllerAdvice
 public class ExceptionHandlerAdvice {
+    private final SystemLog sLog = SystemLog.getLogger(this.getClass());
 
     private BaseResponse buildBaseResponse(BaseRequest baseRequest, ApiResult result) {
         return BaseResponse.builder()
@@ -63,7 +65,7 @@ public class ExceptionHandlerAdvice {
 
     private BaseRequest logAndGetBaseRequest(HttpServletRequest request, Exception e) {
         if (Objects.nonNull(e)) {
-            log.error(ExceptionUtils.getStackTrace(e));
+            sLog.error(ExceptionUtils.getStackTrace(e));
         }
         return ResponseUtil.getBaseRequestOrDefault(request);
     }
@@ -156,7 +158,7 @@ public class ExceptionHandlerAdvice {
 
 //    @ExceptionHandler(ValidationException.class)
 //    public ResponseEntity<ApiResponse<Object>> handleValidationException(HttpServletRequest request, ValidationException e) {
-//        sLog.info("Business Exception: {}", e.getResult());
+//        ssLog.info("Business Exception: {}", e.getResult());
 //        ApiRequest<?> baseRequest = logAndGetBaseRequest(request, e);
 //        return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(buildBaseResponse(baseRequest, e.getResult()));
 //    }
