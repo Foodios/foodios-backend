@@ -14,6 +14,8 @@ import lombok.Setter;
 import lombok.experimental.SuperBuilder;
 import vn.com.orchestration.foodios.dto.common.BaseRequest;
 
+import java.math.BigDecimal;
+
 @Getter
 @Setter
 @NoArgsConstructor
@@ -57,5 +59,6 @@ public class CreateMerchantRequest extends BaseRequest {
         @Pattern(regexp = "^([01]\\d|2[0-3]):[0-5]\\d$")
         private String closingTime;
         private Boolean autoVerify;
+        private BigDecimal commissionRate;
     }
 }

@@ -40,6 +40,13 @@ import vn.com.orchestration.foodios.repository.PaymentRepository;
 import vn.com.orchestration.foodios.repository.ProductRepository;
 import vn.com.orchestration.foodios.repository.StoreRepository;
 import vn.com.orchestration.foodios.repository.UserRepository;
+import vn.com.orchestration.foodios.repository.WalletRepository;
+import vn.com.orchestration.foodios.repository.WalletTransactionRepository;
+import vn.com.orchestration.foodios.repository.CustomerMembershipRepository;
+import vn.com.orchestration.foodios.entity.wallet.Wallet;
+import vn.com.orchestration.foodios.entity.wallet.WalletTransaction;
+import vn.com.orchestration.foodios.entity.wallet.WalletTransactionStatus;
+import vn.com.orchestration.foodios.entity.wallet.WalletTransactionType;
 import vn.com.orchestration.foodios.service.order.CustomerOrderService;
 import vn.com.orchestration.foodios.utils.ApiResultFactory;
 import vn.com.orchestration.foodios.utils.ExceptionUtils;
@@ -70,6 +77,9 @@ public class CustomerOrderServiceImpl implements CustomerOrderService {
     private final CouponRepository couponRepository;
     private final CouponRedemptionRepository couponRedemptionRepository;
     private final UserRepository userRepository;
+    private final CustomerMembershipRepository customerMembershipRepository;
+    private final WalletRepository walletRepository;
+    private final WalletTransactionRepository walletTransactionRepository;
     private final IdentityUserContextProvider identityUserContextProvider;
     private final ApiResultFactory apiResultFactory;
 
@@ -141,12 +151,20 @@ public class CustomerOrderServiceImpl implements CustomerOrderService {
                 .toList();
         List<OrderItem> savedItems = orderItemRepository.saveAll(orderItems);
 
+        PaymentStatus paymentStatus = resolvePaymentStatus(paymentMethod);
+        if (paymentMethod == PaymentMethod.E_WALLET) {
+            processWalletPayment(customer, total, savedOrder, request);
+            paymentStatus = PaymentStatus.PAID;
+            awardLoyaltyPoints(customer, orderItems);
+        }
+
         Payment payment = Payment.builder()
                 .order(savedOrder)
                 .method(paymentMethod)
-                .status(resolvePaymentStatus(paymentMethod))
+                .status(paymentStatus)
                 .amount(total)
                 .provider(resolvePaymentProvider(paymentMethod))
+                .paidAt(paymentStatus == PaymentStatus.PAID ? Instant.now() : null)
                 .build();
         Payment savedPayment = paymentRepository.saveAndFlush(payment);
 
@@ -283,8 +301,32 @@ public class CustomerOrderServiceImpl implements CustomerOrderService {
         return discount.min(subtotal).max(BigDecimal.ZERO);
     }
 
+    private void processWalletPayment(User customer, BigDecimal amount, FoodOrder order, PlaceOrderRequest request) {
+        Wallet wallet = walletRepository.findByUserId(customer.getId())
+                .orElseThrow(() -> businessException(request, INVALID_INPUT_ERROR, "Wallet not found. Please top up first."));
+
+        if (wallet.getBalance().compareTo(amount) < 0) {
+            throw businessException(request, INVALID_INPUT_ERROR, "Insufficient wallet balance");
+        }
+
+        // 1. Deduct balance
+        wallet.setBalance(wallet.getBalance().subtract(amount));
+        walletRepository.save(wallet);
+
+        // 2. Create Wallet Transaction for Audit
+        WalletTransaction transaction = WalletTransaction.builder()
+                .wallet(wallet)
+                .amount(amount.negate()) // Negative for payment
+                .type(WalletTransactionType.PAYMENT)
+                .status(WalletTransactionStatus.SUCCESS)
+                .description("Payment for order " + order.getCode())
+                .referenceId(order.getId().toString())
+                .build();
+        walletTransactionRepository.save(transaction);
+    }
+
     private PaymentStatus resolvePaymentStatus(PaymentMethod paymentMethod) {
-        return paymentMethod == PaymentMethod.COD ? PaymentStatus.PENDING : PaymentStatus.PENDING;
+        return PaymentStatus.PENDING;
     }
 
     private String resolvePaymentProvider(PaymentMethod paymentMethod) {
@@ -337,6 +379,32 @@ public class CustomerOrderServiceImpl implements CustomerOrderService {
         address.setContactName(trimToNull(shippingAddress.getReceiverName()));
         address.setContactPhone(trimToNull(shippingAddress.getReceiverPhone()));
         return address;
+    }
+
+    private static final BigDecimal POINT_EXCHANGE_RATE = new BigDecimal("1000");
+
+    private void awardLoyaltyPoints(User customer, List<OrderItem> items) {
+        customerMembershipRepository.findByUserId(customer.getId()).ifPresent(membership -> {
+            BigDecimal totalBasePoints = items.stream()
+                    .map(item -> {
+                        // 1000 VND = 1 Point, rounded down
+                        BigDecimal pointsPerItem = item.getUnitPrice()
+                                .divide(POINT_EXCHANGE_RATE, 0, RoundingMode.FLOOR);
+                        return pointsPerItem.multiply(BigDecimal.valueOf(item.getQuantity()));
+                    })
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+            if (totalBasePoints.compareTo(BigDecimal.ZERO) > 0) {
+                BigDecimal multiplier = membership.getPointMultiplier() != null ? 
+                                       membership.getPointMultiplier() : BigDecimal.ONE;
+                BigDecimal earnedPoints = totalBasePoints.multiply(multiplier);
+
+                // Update membership points
+                membership.setCurrentAvailablePoints(membership.getCurrentAvailablePoints().add(earnedPoints));
+                membership.setTotalPoints(membership.getTotalPoints().add(earnedPoints));
+                customerMembershipRepository.save(membership);
+            }
+        });
     }
 
     private String generateOrderCode() {

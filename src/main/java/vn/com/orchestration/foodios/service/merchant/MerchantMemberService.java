@@ -11,7 +11,7 @@ import java.util.UUID;
 public interface MerchantMemberService {
     AddMerchantDriverResponse addDriver(AddMerchantDriverRequest request);
 
-    GetMerchantDriversResponse getDrivers(UUID merchantId, BaseRequest request);
+    GetMerchantDriversResponse getDrivers(UUID merchantId, String query, BaseRequest request);
 
     DeleteMerchantDriverResponse deleteDriver(UUID merchantId, UUID userId, BaseRequest request);
 }

@@ -38,9 +38,10 @@ public class AdminUserServiceImpl implements AdminUserService {
 
     @Override
     @Transactional(readOnly = true)
-    public GetUsersByRoleResponse getUsersByRoles(BaseRequest request, List<String> roleCodes, Integer pageNumber, Integer pageSize) {
+    public GetUsersByRoleResponse getUsersByRoles(BaseRequest request, List<String> roleCodes, String query, Integer pageNumber, Integer pageSize) {
         authorizeAdmin(request);
         validatePagination(request, pageNumber, pageSize);
+        String keyword = query == null ? "" : query.trim();
 
         PageRequest pageable = PageRequest.of(
                 pageNumber - 1,
@@ -48,7 +49,9 @@ public class AdminUserServiceImpl implements AdminUserService {
                 Sort.by(Sort.Direction.DESC, "createdAt")
         );
 
-        Page<User> users = userRepository.findByRoleCodes(roleCodes, pageable);
+        Page<User> users = keyword.isEmpty()
+                ? userRepository.findByRoleCodes(roleCodes, pageable)
+                : userRepository.searchByRolesAndKeyword(roleCodes, keyword, pageable);
 
         return GetUsersByRoleResponse.builder()
                 .result(ApiResult.builder().responseCode(SUCCESS_CODE).description(SUCCESS_MESSAGE).build())

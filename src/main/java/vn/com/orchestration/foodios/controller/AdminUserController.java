@@ -30,17 +30,19 @@ public class AdminUserController {
     @GetMapping("/fetch-customers")
     public ResponseEntity<GetUsersByRoleResponse> fetchCustomers(
             HttpServletRequest request,
+            @RequestParam(required = false) String query,
             @RequestParam(defaultValue = "1") Integer pageNumber,
             @RequestParam(defaultValue = "20") Integer pageSize) {
         BaseRequest baseRequest = ResponseUtil.getBaseRequestOrDefault(request);
         GetUsersByRoleResponse response = adminUserService.getUsersByRoles(
-                baseRequest, List.of("CUSTOMER"), pageNumber, pageSize);
+                baseRequest, List.of("CUSTOMER"), query, pageNumber, pageSize);
         return HttpUtils.buildResponse(baseRequest, response);
     }
 
     @GetMapping("/fetch-merchants")
     public ResponseEntity<GetUsersByRoleResponse> fetchMerchants(
             HttpServletRequest request,
+            @RequestParam(required = false) String query,
             @RequestParam(defaultValue = "1") Integer pageNumber,
             @RequestParam(defaultValue = "20") Integer pageSize) {
         BaseRequest baseRequest = ResponseUtil.getBaseRequestOrDefault(request);
@@ -48,18 +50,19 @@ public class AdminUserController {
                 "MERCHANT_OWNER", "MERCHANT_MANAGER", "BRANCH_MANAGER", "STORE_STAFF"
         );
         GetUsersByRoleResponse response = adminUserService.getUsersByRoles(
-                baseRequest, merchantRoles, pageNumber, pageSize);
+                baseRequest, merchantRoles, query, pageNumber, pageSize);
         return HttpUtils.buildResponse(baseRequest, response);
     }
 
     @GetMapping("/fetch-admins")
     public ResponseEntity<GetUsersByRoleResponse> fetchAdmins(
             HttpServletRequest request,
+            @RequestParam(required = false) String query,
             @RequestParam(defaultValue = "1") Integer pageNumber,
             @RequestParam(defaultValue = "20") Integer pageSize) {
         BaseRequest baseRequest = ResponseUtil.getBaseRequestOrDefault(request);
         GetUsersByRoleResponse response = adminUserService.getUsersByRoles(
-                baseRequest, List.of("SUPER_ADMIN", "PLATFORM_ADMIN"), pageNumber, pageSize);
+                baseRequest, List.of("SUPER_ADMIN", "PLATFORM_ADMIN"), query, pageNumber, pageSize);
         return HttpUtils.buildResponse(baseRequest, response);
     }
 }

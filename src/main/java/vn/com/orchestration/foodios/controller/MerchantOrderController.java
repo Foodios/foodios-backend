@@ -83,12 +83,13 @@ public class MerchantOrderController {
     public ResponseEntity<GetOrdersResponse> getOrders(
             @RequestParam UUID merchantId,
             @RequestParam(required = false) OrderStatus status,
+            @RequestParam(required = false) String query,
             @RequestParam(defaultValue = "1") Integer pageNumber,
             @RequestParam(defaultValue = "20") Integer pageSize,
             HttpServletRequest request
     ) {
         BaseRequest baseRequest = ResponseUtil.getBaseRequestOrDefault(request);
-        GetOrdersResponse response = merchantOrderService.getOrders(baseRequest, merchantId, status, pageNumber, pageSize);
+        GetOrdersResponse response = merchantOrderService.getOrders(baseRequest, merchantId, status, query, pageNumber, pageSize);
         return HttpUtils.buildResponse(baseRequest, response);
     }
 }

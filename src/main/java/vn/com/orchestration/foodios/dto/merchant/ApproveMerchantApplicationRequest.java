@@ -9,6 +9,7 @@ import lombok.Setter;
 import lombok.experimental.SuperBuilder;
 import vn.com.orchestration.foodios.dto.common.BaseRequest;
 
+import java.math.BigDecimal;
 import java.util.UUID;
 
 @Getter
@@ -29,5 +30,6 @@ public class ApproveMerchantApplicationRequest extends BaseRequest {
     public static class ApproveMerchantApplicationRequestData {
         @NotNull
         private UUID id;
+        private BigDecimal commissionRate;
     }
 }

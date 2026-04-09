@@ -83,10 +83,11 @@ public class MerchantProductController {
             @RequestParam UUID storeId,
             @RequestParam(required = false) UUID categoryId,
             @RequestParam(required = false) ProductStatus status,
+            @RequestParam(required = false) String query,
             HttpServletRequest request
     ) {
         BaseRequest baseRequest = ResponseUtil.getBaseRequestOrDefault(request);
-        GetProductsResponse response = merchantProductService.getProducts(baseRequest, storeId, categoryId, status);
+        GetProductsResponse response = merchantProductService.getProducts(baseRequest, storeId, categoryId, status, query);
         return HttpUtils.buildResponse(baseRequest, response);
     }
 }

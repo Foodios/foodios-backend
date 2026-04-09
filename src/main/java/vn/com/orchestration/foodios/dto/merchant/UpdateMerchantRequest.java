@@ -8,6 +8,8 @@ import lombok.Setter;
 import lombok.experimental.SuperBuilder;
 import vn.com.orchestration.foodios.dto.common.BaseRequest;
 
+import java.math.BigDecimal;
+
 @Getter
 @Setter
 @NoArgsConstructor
@@ -32,5 +34,6 @@ public class UpdateMerchantRequest extends BaseRequest {
         private String contactEmail;
         private String supportHotline;
         private String status;
+        private BigDecimal commissionRate;
     }
 }

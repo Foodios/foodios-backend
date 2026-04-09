@@ -65,9 +65,9 @@ public class Product extends BaseEntity {
   @Column(name = "compare_at_price", precision = 19, scale = 2)
   private BigDecimal compareAtPrice;
 
-  @Builder.Default
-  @Column(name = "currency", nullable = false, length = 3)
-  private String currency = "VND";
+    @Builder.Default
+    @Column(name = "currency", nullable = false, length = 3)
+    private String currency = "VND";
 
   @Column(name = "sku", length = 64)
   private String sku;

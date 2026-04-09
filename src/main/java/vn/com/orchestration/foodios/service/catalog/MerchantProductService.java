@@ -21,5 +21,5 @@ public interface MerchantProductService {
 
     GetProductResponse getProduct(UUID productId, BaseRequest request, UUID storeId);
 
-    GetProductsResponse getProducts(BaseRequest request, UUID storeId, UUID categoryId, ProductStatus status);
+    GetProductsResponse getProducts(BaseRequest request, UUID storeId, UUID categoryId, ProductStatus status, String query);
 }

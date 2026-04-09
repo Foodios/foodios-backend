@@ -1,11 +1,14 @@
 package vn.com.orchestration.foodios.dto.merchant;
 
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.SuperBuilder;
 import vn.com.orchestration.foodios.dto.common.BaseResponse;
+
+import java.time.OffsetDateTime;
 
 @Getter
 @Setter
@@ -17,9 +20,9 @@ public class DeleteMerchantDriverResponse extends BaseResponse<DeleteMerchantDri
     @Setter
     @AllArgsConstructor
     @NoArgsConstructor
-    @SuperBuilder
+    @Builder
     public static class DeleteMerchantDriverResponseData {
         private String userId;
-        private String status;
+        private OffsetDateTime processedAt;
     }
 }

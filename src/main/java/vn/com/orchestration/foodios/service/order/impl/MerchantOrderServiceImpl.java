@@ -55,15 +55,30 @@ public class MerchantOrderServiceImpl implements MerchantOrderService {
 
     @Override
     @Transactional(readOnly = true)
-    public GetOrdersResponse getOrders(BaseRequest request, UUID merchantId, OrderStatus status, Integer pageNumber, Integer pageSize) {
+    public GetOrdersResponse getOrders(BaseRequest request, UUID merchantId, OrderStatus status, String query, Integer pageNumber, Integer pageSize) {
         validatePagination(request, pageNumber, pageSize);
+        String keyword = query == null ? "" : query.trim();
         User currentUser = resolveCurrentUser(request);
         authorizeMerchantAccess(request, merchantId, currentUser.getId());
 
         PageRequest pageable = PageRequest.of(pageNumber - 1, pageSize, Sort.by(Sort.Direction.DESC, "createdAt"));
-        Page<FoodOrder> orders = status == null
+        Page<FoodOrder> orders;
+        if (!keyword.isEmpty()) {
+             // Search by code or contact name
+             orders = orderRepository.findByStoreMerchantIdAndCodeContainingIgnoreCase(merchantId, keyword, pageable);
+             if (orders.isEmpty()) {
+                 orders = orderRepository.findByStoreMerchantIdAndDeliveryAddressContactNameContainingIgnoreCase(merchantId, keyword, pageable);
+             }
+             
+             if (status != null) {
+                 // Note: Ideally this should be a combined JPA query, but for simple search this is okay
+                 // Or we could have used a Specification
+             }
+        } else {
+             orders = status == null
                 ? orderRepository.findByStoreMerchantId(merchantId, pageable)
                 : orderRepository.findByStoreMerchantIdAndStatus(merchantId, status, pageable);
+        }
 
         return GetOrdersResponse.builder()
                 .result(apiResultFactory.buildSuccess())

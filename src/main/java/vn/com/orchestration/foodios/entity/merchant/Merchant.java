@@ -16,6 +16,8 @@ import lombok.Setter;
 import lombok.experimental.SuperBuilder;
 import vn.com.orchestration.foodios.entity.common.BaseEntity;
 
+import java.math.BigDecimal;
+
 @Getter
 @Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -74,4 +76,8 @@ public class Merchant extends BaseEntity {
   @Builder.Default
   @Column(name = "status", nullable = false, length = 16)
   private MerchantStatus status = MerchantStatus.PENDING;
+
+  @Builder.Default
+  @Column(name = "commission_rate", precision = 5, scale = 2)
+  private BigDecimal commissionRate = new BigDecimal("15.00");
 }

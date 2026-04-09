@@ -81,7 +81,7 @@ public class MerchantMemberServiceImpl implements MerchantMemberService {
                 .result(apiResultFactory.buildSuccess())
                 .data(DeleteMerchantDriverResponse.DeleteMerchantDriverResponseData.builder()
                         .userId(userId.toString())
-                        .status("REMOVED")
+                        .processedAt(OffsetDateTime.now())
                         .build())
                 .build();
     }
@@ -145,14 +145,19 @@ public class MerchantMemberServiceImpl implements MerchantMemberService {
 
     @Override
     @Transactional(readOnly = true)
-    public GetMerchantDriversResponse getDrivers(UUID merchantId, BaseRequest request) {
+    public GetMerchantDriversResponse getDrivers(UUID merchantId, String query, BaseRequest request) {
         // 1. Resolve Current User and Authorize Access
         User currentUser = resolveCurrentUser(request);
         authorizeMerchantAccess(request, merchantId, currentUser.getId());
+        String keyword = query == null ? "" : query.trim().toLowerCase();
 
         // 2. Fetch Drivers for this merchant
         List<MerchantMember> driverMembers = merchantMemberRepository.findByMerchantId(merchantId).stream()
                 .filter(member -> member.getRole() == MerchantMemberRole.DRIVER)
+                .filter(member -> keyword.isEmpty() 
+                        || member.getUser().getFullName().toLowerCase().contains(keyword)
+                        || member.getUser().getEmail().toLowerCase().contains(keyword)
+                        || member.getUser().getPhone().contains(keyword))
                 .toList();
 
         // 3. Map to Payload

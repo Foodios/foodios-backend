@@ -30,6 +30,7 @@ import vn.com.orchestration.foodios.repository.ProductRepository;
 import vn.com.orchestration.foodios.repository.StoreRepository;
 import vn.com.orchestration.foodios.repository.UserRepository;
 import vn.com.orchestration.foodios.service.catalog.MerchantProductService;
+import vn.com.orchestration.foodios.service.search.SearchSyncService;
 import vn.com.orchestration.foodios.utils.ApiResultFactory;
 import vn.com.orchestration.foodios.utils.ExceptionUtils;
 
@@ -58,6 +59,7 @@ public class MerchantProductServiceImpl implements MerchantProductService {
     private final UserRepository userRepository;
     private final MerchantMemberRepository merchantMemberRepository;
     private final IdentityUserContextProvider identityUserContextProvider;
+    private final SearchSyncService searchSyncService;
     private final ApiResultFactory apiResultFactory;
     private final SystemLog sLog = SystemLog.getLogger(this.getClass());
 
@@ -110,6 +112,7 @@ public class MerchantProductServiceImpl implements MerchantProductService {
                 .build();
 
         Product savedProduct = productRepository.saveAndFlush(product);
+        searchSyncService.syncProduct(savedProduct);
 
         return CreateProductResponse.builder()
                 .result(apiResultFactory.buildSuccess())
@@ -188,6 +191,7 @@ public class MerchantProductServiceImpl implements MerchantProductService {
         }
 
         Product savedProduct = productRepository.saveAndFlush(product);
+        searchSyncService.syncProduct(savedProduct);
         return UpdateProductResponse.builder()
                 .result(apiResultFactory.buildSuccess())
                 .data(toPayload(savedProduct))
@@ -208,6 +212,7 @@ public class MerchantProductServiceImpl implements MerchantProductService {
         product.setAvailable(false);
 
         Product savedProduct = productRepository.saveAndFlush(product);
+        searchSyncService.deleteProduct(savedProduct);
         return DeleteProductResponse.builder()
                 .result(apiResultFactory.buildSuccess())
                 .data(toPayload(savedProduct))
@@ -232,7 +237,8 @@ public class MerchantProductServiceImpl implements MerchantProductService {
 
     @Override
     @Transactional(readOnly = true)
-    public GetProductsResponse getProducts(BaseRequest request, UUID storeId, UUID categoryId, ProductStatus status) {
+    public GetProductsResponse getProducts(BaseRequest request, UUID storeId, UUID categoryId, ProductStatus status, String query) {
+        String keyword = query == null ? "" : query.trim();
         IdentityUserContext currentUserContext = identityUserContextProvider.requireCurrentUser();
         User currentUser = resolveCurrentUser(request, currentUserContext);
         Store store = storeRepository.findById(storeId)
@@ -244,7 +250,21 @@ public class MerchantProductServiceImpl implements MerchantProductService {
         }
 
         List<Product> products;
-        if (categoryId != null && status != null) {
+        if (!keyword.isEmpty()) {
+            products = productRepository.findByStoreIdAndNameContainingIgnoreCase(
+                    store.getId(),
+                    keyword,
+                    org.springframework.data.domain.Pageable.unpaged()
+            ).getContent();
+            
+            // Optionally filter the keyword results by category/status if they were provided
+            if (categoryId != null) {
+                products = products.stream().filter(p -> p.getCategory() != null && p.getCategory().getId().equals(categoryId)).toList();
+            }
+            if (status != null) {
+                products = products.stream().filter(p -> p.getStatus() == status).toList();
+            }
+        } else if (categoryId != null && status != null) {
             products = productRepository.findByStoreIdAndCategoryIdAndStatus(
                     store.getId(),
                     categoryId,

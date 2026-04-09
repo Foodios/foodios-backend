@@ -3,6 +3,7 @@ package vn.com.orchestration.foodios.service.merchant.impl;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -11,14 +12,15 @@ import vn.com.orchestration.foodios.dto.common.BaseRequest;
 import vn.com.orchestration.foodios.dto.merchant.ApproveMerchantApplicationRequest;
 import vn.com.orchestration.foodios.dto.merchant.CreateMerchantRequest;
 import vn.com.orchestration.foodios.dto.merchant.CreateMerchantResponse;
+import vn.com.orchestration.foodios.dto.merchant.DeleteMerchantResponse;
 import vn.com.orchestration.foodios.dto.merchant.GetMerchantApplicationFormDetailResponse;
 import vn.com.orchestration.foodios.dto.merchant.GetMerchantApplicationFormsResponse;
+import vn.com.orchestration.foodios.dto.merchant.GetMerchantDetailResponse;
 import vn.com.orchestration.foodios.dto.merchant.GetMerchantsResponse;
 import vn.com.orchestration.foodios.dto.merchant.RejectMerchantApplicationRequest;
 import vn.com.orchestration.foodios.dto.merchant.ReviewMerchantApplicationResponse;
 import vn.com.orchestration.foodios.dto.merchant.UpdateMerchantRequest;
 import vn.com.orchestration.foodios.dto.merchant.UpdateMerchantResponse;
-import vn.com.orchestration.foodios.dto.merchant.DeleteMerchantResponse;
 import vn.com.orchestration.foodios.entity.common.AddressSnapshot;
 import vn.com.orchestration.foodios.entity.merchant.ApplicationFormStatus;
 import vn.com.orchestration.foodios.entity.merchant.Merchant;
@@ -31,18 +33,26 @@ import vn.com.orchestration.foodios.entity.merchant.MerchantPayout;
 import vn.com.orchestration.foodios.entity.merchant.MerchantStatus;
 import vn.com.orchestration.foodios.entity.merchant.Store;
 import vn.com.orchestration.foodios.entity.merchant.StoreStatus;
+import vn.com.orchestration.foodios.entity.order.FoodOrder;
+import vn.com.orchestration.foodios.entity.order.OrderStatus;
+import vn.com.orchestration.foodios.entity.review.Review;
+import vn.com.orchestration.foodios.entity.review.ReviewStatus;
 import vn.com.orchestration.foodios.exception.BusinessException;
 import vn.com.orchestration.foodios.jwt.identity.IdentityUserContext;
 import vn.com.orchestration.foodios.jwt.identity.IdentityUserContextProvider;
 import vn.com.orchestration.foodios.log.SystemLog;
 import vn.com.orchestration.foodios.repository.MerchantMemberRepository;
 import vn.com.orchestration.foodios.repository.MerchantRepository;
+import vn.com.orchestration.foodios.repository.OrderRepository;
+import vn.com.orchestration.foodios.repository.ReviewRepository;
 import vn.com.orchestration.foodios.repository.StoreRepository;
 import vn.com.orchestration.foodios.repository.UserRepository;
 import vn.com.orchestration.foodios.service.auth.UserRoleService;
 import vn.com.orchestration.foodios.service.merchant.AdminMerchantService;
+import vn.com.orchestration.foodios.service.search.SearchSyncService;
 import vn.com.orchestration.foodios.utils.ExceptionUtils;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
@@ -74,8 +84,11 @@ public class AdminMerchantServiceImpl implements AdminMerchantService {
     private final MerchantMemberRepository merchantMemberRepository;
     private final StoreRepository storeRepository;
     private final UserRepository userRepository;
+    private final ReviewRepository reviewRepository;
+    private final OrderRepository orderRepository;
     private final IdentityUserContextProvider identityUserContextProvider;
     private final UserRoleService userRoleService;
+    private final SearchSyncService searchSyncService;
     private final SystemLog sLog = SystemLog.getLogger(this.getClass());
 
     @Override
@@ -122,6 +135,7 @@ public class AdminMerchantServiceImpl implements AdminMerchantService {
                 .contactEmail(contactEmail)
                 .supportHotline(data.getSupportHotline().trim())
                 .status(merchantStatus)
+                .commissionRate(data.getCommissionRate() != null ? data.getCommissionRate() : new java.math.BigDecimal("15.00"))
                 .build();
         Merchant savedMerchant = merchantRepository.saveAndFlush(merchant);
 
@@ -140,6 +154,7 @@ public class AdminMerchantServiceImpl implements AdminMerchantService {
                 .address(addressSnapshot)
                 .build();
         Store savedStore = storeRepository.saveAndFlush(store);
+        searchSyncService.syncStore(savedStore);
 
         CreateMerchantResponse response = new CreateMerchantResponse();
         response.setResult(ApiResult.builder().responseCode(SUCCESS_CODE).description(SUCCESS_MESSAGE).build());
@@ -155,6 +170,7 @@ public class AdminMerchantServiceImpl implements AdminMerchantService {
                         .locationDistrict(savedStore.getAddress() != null ? savedStore.getAddress().getDistrict() : null)
                         .merchantStatus(savedMerchant.getStatus())
                         .storeStatus(savedStore.getStatus())
+                        .commissionRate(savedMerchant.getCommissionRate())
                         .build()
         );
         return response;
@@ -162,9 +178,10 @@ public class AdminMerchantServiceImpl implements AdminMerchantService {
 
     @Override
     @Transactional(readOnly = true)
-    public GetMerchantsResponse getMerchants(BaseRequest request, Integer pageNumber, Integer pageSize) {
+    public GetMerchantsResponse getMerchants(BaseRequest request, String query, Integer pageNumber, Integer pageSize) {
         authorizeAdmin(request);
         validatePagination(request, pageNumber, pageSize);
+        String keyword = query == null ? "" : query.trim();
 
         PageRequest pageable = PageRequest.of(
                 pageNumber - 1,
@@ -172,7 +189,9 @@ public class AdminMerchantServiceImpl implements AdminMerchantService {
                 Sort.by(Sort.Direction.DESC, "createdAt")
         );
 
-        Page<Merchant> merchants = merchantRepository.findAll(pageable);
+        Page<Merchant> merchants = keyword.isEmpty()
+                ? merchantRepository.findAll(pageable)
+                : merchantRepository.findByDisplayNameContainingIgnoreCase(keyword, pageable);
 
         return GetMerchantsResponse.builder()
                 .result(ApiResult.builder().responseCode(SUCCESS_CODE).description(SUCCESS_MESSAGE).build())
@@ -183,6 +202,56 @@ public class AdminMerchantServiceImpl implements AdminMerchantService {
                         .totalItems(merchants.getTotalElements())
                         .totalPages(merchants.getTotalPages())
                         .hasNext(merchants.hasNext())
+                        .build())
+                .build();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public GetMerchantDetailResponse getMerchantDetail(BaseRequest request, UUID id) {
+        authorizeAdmin(request);
+        Merchant merchant = merchantRepository.findById(id)
+                .orElseThrow(() -> businessException(request, RECORD_NOT_FOUND, "Merchant not found"));
+
+        // Calculate Metrics
+        var reviews = reviewRepository.findByStoreMerchantIdAndStatus(id, ReviewStatus.PUBLISHED);
+        double avgRating = reviews.stream().mapToInt(Review::getRating).average().orElse(0.0);
+        long totalReviews = reviews.size();
+
+        var orders = orderRepository.findByStoreMerchantId(id, Pageable.unpaged()).getContent();
+        long totalOrders = orders.size();
+
+        OffsetDateTime startOfMonth = OffsetDateTime.now().withDayOfMonth(1).withHour(0).withMinute(0).withSecond(0).withNano(0);
+        BigDecimal mtdRevenue = orders.stream()
+                .filter(o -> o.getCreatedAt().isAfter(startOfMonth) || o.getCreatedAt().isEqual(startOfMonth))
+                .filter(o -> o.getStatus() == OrderStatus.DELIVERED)
+                .map(FoodOrder::getTotal)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        return GetMerchantDetailResponse.builder()
+                .result(ApiResult.builder().responseCode(SUCCESS_CODE).description(SUCCESS_MESSAGE).build())
+                .data(GetMerchantDetailResponse.GetMerchantDetailResponseData.builder()
+                        .id(merchant.getId())
+                        .displayName(merchant.getDisplayName())
+                        .legalName(merchant.getLegalName())
+                        .description(merchant.getDescription())
+                        .taxCode(merchant.getTaxCode())
+                        .businessRegistrationNumber(merchant.getBusinessRegistrationNumber())
+                        .businessLicenseImageUrl(merchant.getBusinessLicenseImageUrl())
+                        .foodSafetyLicenseImageUrl(merchant.getFoodSafetyLicenseImageUrl())
+                        .slug(merchant.getSlug())
+                        .logoUrl(merchant.getLogoUrl())
+                        .cuisineCategory(merchant.getCuisineCategory())
+                        .contactEmail(merchant.getContactEmail())
+                        .supportHotline(merchant.getSupportHotline())
+                        .status(merchant.getStatus().name())
+                        .commissionRate(merchant.getCommissionRate())
+                        .rating(avgRating)
+                        .totalReviews(totalReviews)
+                        .totalOrders(totalOrders)
+                        .mtdRevenue(mtdRevenue)
+                        .createdAt(merchant.getCreatedAt())
+                        .updatedAt(merchant.getUpdatedAt())
                         .build())
                 .build();
     }
@@ -199,6 +268,7 @@ public class AdminMerchantServiceImpl implements AdminMerchantService {
                 .contactEmail(merchant.getContactEmail())
                 .supportHotline(merchant.getSupportHotline())
                 .status(merchant.getStatus().name())
+                .commissionRate(merchant.getCommissionRate())
                 .createdAt(merchant.getCreatedAt() != null ? merchant.getCreatedAt().toString() : null)
                 .build();
     }
@@ -226,6 +296,7 @@ public class AdminMerchantServiceImpl implements AdminMerchantService {
         if (data.getCuisineCategory() != null) merchant.setCuisineCategory(data.getCuisineCategory());
         if (data.getContactEmail() != null) merchant.setContactEmail(data.getContactEmail());
         if (data.getSupportHotline() != null) merchant.setSupportHotline(data.getSupportHotline());
+        if (data.getCommissionRate() != null) merchant.setCommissionRate(data.getCommissionRate());
         if (data.getStatus() != null) {
             try {
                 merchant.setStatus(MerchantStatus.valueOf(data.getStatus().toUpperCase()));
@@ -235,6 +306,7 @@ public class AdminMerchantServiceImpl implements AdminMerchantService {
         }
 
         merchantRepository.save(merchant);
+        storeRepository.findByMerchantId(merchant.getId()).forEach(searchSyncService::syncStore);
 
         return UpdateMerchantResponse.builder()
                 .result(ApiResult.builder().responseCode(SUCCESS_CODE).description(SUCCESS_MESSAGE).build())
@@ -378,6 +450,7 @@ public class AdminMerchantServiceImpl implements AdminMerchantService {
                 .contactEmail(normalizeEmail(form.getContactEmail()))
                 .supportHotline(trimToNull(form.getContactPhone()))
                 .status(MerchantStatus.ACTIVE)
+                .commissionRate(request.getData().getCommissionRate() != null ? request.getData().getCommissionRate() : new java.math.BigDecimal("15.00"))
                 .build();
         Merchant savedMerchant = merchantRepository.saveAndFlush(merchant);
         assignMerchantOwnership(request, form, savedMerchant);

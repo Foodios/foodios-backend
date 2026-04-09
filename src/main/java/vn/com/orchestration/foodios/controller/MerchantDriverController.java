@@ -47,9 +47,12 @@ public class MerchantDriverController {
     }
 
     @GetMapping
-    public ResponseEntity<GetMerchantDriversResponse> getDrivers(@RequestParam UUID merchantId, HttpServletRequest request) {
+    public ResponseEntity<GetMerchantDriversResponse> getDrivers(
+            @RequestParam UUID merchantId, 
+            @RequestParam(required = false) String query,
+            HttpServletRequest request) {
         BaseRequest baseRequest = ResponseUtil.getBaseRequestOrDefault(request);
-        GetMerchantDriversResponse response = merchantMemberService.getDrivers(merchantId, baseRequest);
+        GetMerchantDriversResponse response = merchantMemberService.getDrivers(merchantId, query, baseRequest);
         return HttpUtils.buildResponse(baseRequest, response);
     }
 

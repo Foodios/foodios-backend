@@ -25,4 +25,10 @@ public interface UserRepository extends JpaRepository<User, UUID> {
 
   @Query("SELECT DISTINCT u FROM User u JOIN UserRole ur ON u.id = ur.id.userId JOIN ur.role r WHERE r.code IN :roleCodes")
   Page<User> findByRoleCodes(List<String> roleCodes, Pageable pageable);
+
+  @Query("SELECT DISTINCT u FROM User u JOIN UserRole ur ON u.id = ur.id.userId JOIN ur.role r " +
+          "WHERE r.code IN :roleCodes AND (lower(u.fullName) LIKE lower(concat('%', :keyword, '%')) " +
+          "OR lower(u.email) LIKE lower(concat('%', :keyword, '%')) " +
+          "OR u.phone LIKE concat('%', :keyword, '%'))")
+  Page<User> searchByRolesAndKeyword(List<String> roleCodes, String keyword, Pageable pageable);
 }

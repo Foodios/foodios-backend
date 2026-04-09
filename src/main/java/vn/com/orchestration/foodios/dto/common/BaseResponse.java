@@ -1,5 +1,6 @@
 package vn.com.orchestration.foodios.dto.common;
 
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -12,6 +13,7 @@ import lombok.experimental.SuperBuilder;
 @AllArgsConstructor
 @NoArgsConstructor
 @SuperBuilder
+@JsonPropertyOrder({"requestId", "requestDateTime", "channel", "result", "data"})
 public class BaseResponse<T> {
   private String requestId;
   private String requestDateTime;

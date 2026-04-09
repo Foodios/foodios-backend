@@ -40,10 +40,18 @@ public class AdminMerchantController {
     @GetMapping
     public ResponseEntity<GetMerchantsResponse> getMerchants(
             HttpServletRequest request,
+            @RequestParam(required = false) String query,
             @RequestParam(defaultValue = "1") Integer pageNumber,
             @RequestParam(defaultValue = "20") Integer pageSize) {
         BaseRequest baseRequest = ResponseUtil.getBaseRequestOrDefault(request);
-        GetMerchantsResponse response = adminMerchantService.getMerchants(baseRequest, pageNumber, pageSize);
+        GetMerchantsResponse response = adminMerchantService.getMerchants(baseRequest, query, pageNumber, pageSize);
+        return HttpUtils.buildResponse(baseRequest, response);
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<GetMerchantDetailResponse> getMerchantDetail(@PathVariable UUID id, HttpServletRequest request) {
+        BaseRequest baseRequest = ResponseUtil.getBaseRequestOrDefault(request);
+        GetMerchantDetailResponse response = adminMerchantService.getMerchantDetail(baseRequest, id);
         return HttpUtils.buildResponse(baseRequest, response);
     }
 

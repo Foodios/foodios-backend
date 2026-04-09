@@ -10,7 +10,7 @@ import java.util.UUID;
 
 public interface MerchantOrderService {
 
-    GetOrdersResponse getOrders(BaseRequest request, UUID merchantId, OrderStatus status, Integer pageNumber, Integer pageSize);
+    GetOrdersResponse getOrders(BaseRequest request, UUID merchantId, OrderStatus status, String query, Integer pageNumber, Integer pageSize);
 
     GetOrderResponse getOrder(BaseRequest request, UUID merchantId, UUID orderId);
 

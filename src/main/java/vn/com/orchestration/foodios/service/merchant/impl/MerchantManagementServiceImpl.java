@@ -22,6 +22,7 @@ import vn.com.orchestration.foodios.jwt.identity.IdentityUserContextProvider;
 import vn.com.orchestration.foodios.repository.MerchantMemberRepository;
 import vn.com.orchestration.foodios.repository.MerchantRepository;
 import vn.com.orchestration.foodios.repository.UserRepository;
+import vn.com.orchestration.foodios.repository.search.StoreSearchRepository;
 import vn.com.orchestration.foodios.service.merchant.MerchantManagementService;
 import vn.com.orchestration.foodios.utils.ApiResultFactory;
 import vn.com.orchestration.foodios.utils.ExceptionUtils;
@@ -49,6 +50,7 @@ public class MerchantManagementServiceImpl implements MerchantManagementService 
     private final MerchantMemberRepository merchantMemberRepository;
     private final MerchantApplicationFormRepository merchantApplicationFormRepository;
     private final UserRepository userRepository;
+    private final StoreSearchRepository storeSearchRepository;
     private final IdentityUserContextProvider identityUserContextProvider;
     private final ApiResultFactory apiResultFactory;
 
@@ -234,20 +236,19 @@ public class MerchantManagementServiceImpl implements MerchantManagementService 
     @Transactional(readOnly = true)
     public SearchMerchantResponse search(SearchMerchantRequest request) {
         Pageable pageable = PageRequest.of(request.getPageNumber(), request.getPageSize());
-        Page<Merchant> merchantPage = merchantRepository.findByDisplayNameContainingIgnoreCase(
-                request.getName() != null ? request.getName() : "", 
-                pageable
-        );
+        String query = request.getName() != null ? request.getName() : "";
+        
+        var searchResult = storeSearchRepository.findByNameContainingIgnoreCase(query, pageable);
 
-        List<SearchMerchantResponse.MerchantPayload> items = merchantPage.getContent().stream()
-                .map(merchant -> SearchMerchantResponse.MerchantPayload.builder()
-                        .id(merchant.getId().toString())
-                        .displayName(merchant.getDisplayName())
-                        .slug(merchant.getSlug())
-                        .logoUrl(merchant.getLogoUrl())
-                        .description(merchant.getDescription())
-                        .cuisineCategory(merchant.getCuisineCategory())
-                        .status(merchant.getStatus().name())
+        List<SearchMerchantResponse.MerchantPayload> items = searchResult.getContent().stream()
+                .map(doc -> SearchMerchantResponse.MerchantPayload.builder()
+                        .id(doc.getId())
+                        .displayName(doc.getName())
+                        .slug(doc.getSlug())
+                        .logoUrl(doc.getLogoUrl())
+                        .description(doc.getDescription())
+                        .cuisineCategory(doc.getCuisineCategory())
+                        .status(doc.getStatus())
                         .build())
                 .toList();
 
@@ -258,11 +259,11 @@ public class MerchantManagementServiceImpl implements MerchantManagementService 
                 .result(apiResultFactory.buildSuccess())
                 .data(SearchMerchantResponse.SearchMerchantResponseData.builder()
                         .items(items)
-                        .pageNumber(merchantPage.getNumber())
-                        .pageSize(merchantPage.getSize())
-                        .totalItems(merchantPage.getTotalElements())
-                        .totalPages(merchantPage.getTotalPages())
-                        .hasNext(merchantPage.hasNext())
+                        .pageNumber(searchResult.getNumber())
+                        .pageSize(searchResult.getSize())
+                        .totalItems(searchResult.getTotalElements())
+                        .totalPages(searchResult.getTotalPages())
+                        .hasNext(searchResult.hasNext())
                         .build())
                 .build();
     }

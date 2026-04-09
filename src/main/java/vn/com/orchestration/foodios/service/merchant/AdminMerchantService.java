@@ -6,6 +6,7 @@ import vn.com.orchestration.foodios.dto.merchant.CreateMerchantRequest;
 import vn.com.orchestration.foodios.dto.merchant.CreateMerchantResponse;
 import vn.com.orchestration.foodios.dto.merchant.GetMerchantApplicationFormDetailResponse;
 import vn.com.orchestration.foodios.dto.merchant.GetMerchantApplicationFormsResponse;
+import vn.com.orchestration.foodios.dto.merchant.GetMerchantDetailResponse;
 import vn.com.orchestration.foodios.dto.merchant.GetMerchantsResponse;
 import vn.com.orchestration.foodios.dto.merchant.RejectMerchantApplicationRequest;
 import vn.com.orchestration.foodios.dto.merchant.ReviewMerchantApplicationResponse;
@@ -22,7 +23,9 @@ public interface AdminMerchantService {
 
     DeleteMerchantResponse deleteMerchant(BaseRequest request, UUID id);
 
-    GetMerchantsResponse getMerchants(BaseRequest request, Integer pageNumber, Integer pageSize);
+    GetMerchantsResponse getMerchants(BaseRequest request, String query, Integer pageNumber, Integer pageSize);
+
+    GetMerchantDetailResponse getMerchantDetail(BaseRequest request, UUID id);
 
     GetMerchantApplicationFormsResponse getMerchantApplicationForms(
             BaseRequest request,

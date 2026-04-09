@@ -10,6 +10,7 @@ import vn.com.orchestration.foodios.dto.common.BaseResponse;
 import vn.com.orchestration.foodios.entity.merchant.MerchantStatus;
 import vn.com.orchestration.foodios.entity.merchant.StoreStatus;
 
+import java.math.BigDecimal;
 import java.util.UUID;
 
 @Getter
@@ -34,5 +35,6 @@ public class CreateMerchantResponse extends BaseResponse<CreateMerchantResponse.
         private String locationDistrict;
         private MerchantStatus merchantStatus;
         private StoreStatus storeStatus;
+        private BigDecimal commissionRate;
     }
 }

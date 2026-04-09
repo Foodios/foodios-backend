@@ -8,6 +8,7 @@ import lombok.Setter;
 import lombok.experimental.SuperBuilder;
 import vn.com.orchestration.foodios.dto.common.BaseResponse;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @Getter
@@ -46,6 +47,7 @@ public class GetMerchantsResponse extends BaseResponse<GetMerchantsResponse.GetM
         private String contactEmail;
         private String supportHotline;
         private String status;
+        private BigDecimal commissionRate;
         private String createdAt;
     }
 }
