@@ -14,6 +14,6 @@ public class JwtProperties {
     private String authorityClaimName = "roles";
     private String authorityPrefix = "ROLE_";
 
-    private long accessTokenExpirationMinutes = 15;
+    private long accessTokenExpirationMinutes = 120;
     private long refreshTokenExpirationDays = 7;
 }
