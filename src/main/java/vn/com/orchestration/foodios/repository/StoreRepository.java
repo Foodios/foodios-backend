@@ -13,6 +13,11 @@ import java.util.UUID;
 public interface StoreRepository extends JpaRepository<Store, UUID> {
   Optional<Store> findBySlug(String slug);
 
+  Page<Store> findByNameContainingIgnoreCase(String name, Pageable pageable);
+
+  List<Store> findTop10ByStatusAndNameContainingIgnoreCaseOrderByNameAsc(
+      StoreStatus status, String name);
+
   List<Store> findByMerchantId(UUID merchantId);
 
   Page<Store> findByMerchantId(UUID merchantId, Pageable pageable);

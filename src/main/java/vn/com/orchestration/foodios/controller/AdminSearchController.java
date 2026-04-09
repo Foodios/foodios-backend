@@ -10,7 +10,6 @@ import vn.com.orchestration.foodios.dto.common.ApiResult;
 import vn.com.orchestration.foodios.dto.common.BaseRequest;
 import vn.com.orchestration.foodios.dto.common.BaseResponse;
 import vn.com.orchestration.foodios.exception.ResponseUtil;
-import vn.com.orchestration.foodios.service.search.SearchSyncService;
 import vn.com.orchestration.foodios.utils.HttpUtils;
 
 import static vn.com.orchestration.foodios.constant.ApiConstant.ADMIN_PATH;
@@ -24,20 +23,15 @@ import static vn.com.orchestration.foodios.constant.ErrorConstant.SUCCESS_MESSAG
 @RequiredArgsConstructor
 public class AdminSearchController {
 
-    private final SearchSyncService searchSyncService;
-
     @PostMapping("/re-index")
     public ResponseEntity<BaseResponse<String>> reIndex(HttpServletRequest request) {
         BaseRequest baseRequest = ResponseUtil.getBaseRequestOrDefault(request);
-        
-        searchSyncService.syncAllStores();
-        searchSyncService.syncAllProducts();
-        
+
         BaseResponse<String> response = BaseResponse.<String>builder()
                 .result(ApiResult.builder().responseCode(SUCCESS_CODE).description(SUCCESS_MESSAGE).build())
-                .data("Re-indexing started in background")
+                .data("Search indexing is disabled. Search now reads directly from PostgreSQL.")
                 .build();
-                
+
         return HttpUtils.buildResponse(baseRequest, response);
     }
 }

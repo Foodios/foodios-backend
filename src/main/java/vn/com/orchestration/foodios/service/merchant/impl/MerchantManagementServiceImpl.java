@@ -15,14 +15,15 @@ import vn.com.orchestration.foodios.entity.merchant.MerchantApplicationForm;
 import vn.com.orchestration.foodios.entity.merchant.MerchantApplicationFormRepository;
 import vn.com.orchestration.foodios.entity.merchant.MerchantMember;
 import vn.com.orchestration.foodios.entity.merchant.MerchantMemberStatus;
+import vn.com.orchestration.foodios.entity.merchant.Store;
 import vn.com.orchestration.foodios.entity.user.User;
 import vn.com.orchestration.foodios.exception.BusinessException;
 import vn.com.orchestration.foodios.jwt.identity.IdentityUserContext;
 import vn.com.orchestration.foodios.jwt.identity.IdentityUserContextProvider;
 import vn.com.orchestration.foodios.repository.MerchantMemberRepository;
 import vn.com.orchestration.foodios.repository.MerchantRepository;
+import vn.com.orchestration.foodios.repository.StoreRepository;
 import vn.com.orchestration.foodios.repository.UserRepository;
-import vn.com.orchestration.foodios.repository.search.StoreSearchRepository;
 import vn.com.orchestration.foodios.service.merchant.MerchantManagementService;
 import vn.com.orchestration.foodios.utils.ApiResultFactory;
 import vn.com.orchestration.foodios.utils.ExceptionUtils;
@@ -50,7 +51,7 @@ public class MerchantManagementServiceImpl implements MerchantManagementService 
     private final MerchantMemberRepository merchantMemberRepository;
     private final MerchantApplicationFormRepository merchantApplicationFormRepository;
     private final UserRepository userRepository;
-    private final StoreSearchRepository storeSearchRepository;
+    private final StoreRepository storeRepository;
     private final IdentityUserContextProvider identityUserContextProvider;
     private final ApiResultFactory apiResultFactory;
 
@@ -237,19 +238,11 @@ public class MerchantManagementServiceImpl implements MerchantManagementService 
     public SearchMerchantResponse search(SearchMerchantRequest request) {
         Pageable pageable = PageRequest.of(request.getPageNumber(), request.getPageSize());
         String query = request.getName() != null ? request.getName() : "";
-        
-        var searchResult = storeSearchRepository.findByNameContainingIgnoreCase(query, pageable);
+
+        var searchResult = storeRepository.findByNameContainingIgnoreCase(query, pageable);
 
         List<SearchMerchantResponse.MerchantPayload> items = searchResult.getContent().stream()
-                .map(doc -> SearchMerchantResponse.MerchantPayload.builder()
-                        .id(doc.getId())
-                        .displayName(doc.getName())
-                        .slug(doc.getSlug())
-                        .logoUrl(doc.getLogoUrl())
-                        .description(doc.getDescription())
-                        .cuisineCategory(doc.getCuisineCategory())
-                        .status(doc.getStatus())
-                        .build())
+                .map(this::toMerchantSearchPayload)
                 .toList();
 
         return SearchMerchantResponse.builder()
@@ -265,6 +258,18 @@ public class MerchantManagementServiceImpl implements MerchantManagementService 
                         .totalPages(searchResult.getTotalPages())
                         .hasNext(searchResult.hasNext())
                         .build())
+                .build();
+    }
+
+    private SearchMerchantResponse.MerchantPayload toMerchantSearchPayload(Store store) {
+        return SearchMerchantResponse.MerchantPayload.builder()
+                .id(store.getId().toString())
+                .displayName(store.getName())
+                .slug(store.getSlug())
+                .logoUrl(store.getHeroImageUrl())
+                .description(store.getMerchant() != null ? store.getMerchant().getDescription() : null)
+                .cuisineCategory(store.getMerchant() != null ? store.getMerchant().getCuisineCategory() : null)
+                .status(store.getStatus() != null ? store.getStatus().name() : null)
                 .build();
     }
 

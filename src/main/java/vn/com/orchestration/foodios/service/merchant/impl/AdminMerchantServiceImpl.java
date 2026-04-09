@@ -49,7 +49,6 @@ import vn.com.orchestration.foodios.repository.StoreRepository;
 import vn.com.orchestration.foodios.repository.UserRepository;
 import vn.com.orchestration.foodios.service.auth.UserRoleService;
 import vn.com.orchestration.foodios.service.merchant.AdminMerchantService;
-import vn.com.orchestration.foodios.service.search.SearchSyncService;
 import vn.com.orchestration.foodios.utils.ExceptionUtils;
 
 import java.math.BigDecimal;
@@ -88,7 +87,6 @@ public class AdminMerchantServiceImpl implements AdminMerchantService {
     private final OrderRepository orderRepository;
     private final IdentityUserContextProvider identityUserContextProvider;
     private final UserRoleService userRoleService;
-    private final SearchSyncService searchSyncService;
     private final SystemLog sLog = SystemLog.getLogger(this.getClass());
 
     @Override
@@ -154,7 +152,6 @@ public class AdminMerchantServiceImpl implements AdminMerchantService {
                 .address(addressSnapshot)
                 .build();
         Store savedStore = storeRepository.saveAndFlush(store);
-        searchSyncService.syncStore(savedStore);
 
         CreateMerchantResponse response = new CreateMerchantResponse();
         response.setResult(ApiResult.builder().responseCode(SUCCESS_CODE).description(SUCCESS_MESSAGE).build());
@@ -306,7 +303,6 @@ public class AdminMerchantServiceImpl implements AdminMerchantService {
         }
 
         merchantRepository.save(merchant);
-        storeRepository.findByMerchantId(merchant.getId()).forEach(searchSyncService::syncStore);
 
         return UpdateMerchantResponse.builder()
                 .result(ApiResult.builder().responseCode(SUCCESS_CODE).description(SUCCESS_MESSAGE).build())

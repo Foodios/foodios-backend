@@ -43,4 +43,6 @@ public interface ReviewRepository extends JpaRepository<Review, UUID> {
 
   List<Review> findByStoreMerchantIdAndStoreIdAndStatus(
       UUID merchantId, UUID storeId, ReviewStatus status);
+
+  List<Review> findByStoreIdAndStatus(UUID storeId, ReviewStatus status);
 }

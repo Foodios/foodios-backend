@@ -30,7 +30,6 @@ import vn.com.orchestration.foodios.repository.ProductRepository;
 import vn.com.orchestration.foodios.repository.StoreRepository;
 import vn.com.orchestration.foodios.repository.UserRepository;
 import vn.com.orchestration.foodios.service.catalog.MerchantProductService;
-import vn.com.orchestration.foodios.service.search.SearchSyncService;
 import vn.com.orchestration.foodios.utils.ApiResultFactory;
 import vn.com.orchestration.foodios.utils.ExceptionUtils;
 
@@ -59,7 +58,6 @@ public class MerchantProductServiceImpl implements MerchantProductService {
     private final UserRepository userRepository;
     private final MerchantMemberRepository merchantMemberRepository;
     private final IdentityUserContextProvider identityUserContextProvider;
-    private final SearchSyncService searchSyncService;
     private final ApiResultFactory apiResultFactory;
     private final SystemLog sLog = SystemLog.getLogger(this.getClass());
 
@@ -112,7 +110,6 @@ public class MerchantProductServiceImpl implements MerchantProductService {
                 .build();
 
         Product savedProduct = productRepository.saveAndFlush(product);
-        searchSyncService.syncProduct(savedProduct);
 
         return CreateProductResponse.builder()
                 .result(apiResultFactory.buildSuccess())
@@ -191,7 +188,6 @@ public class MerchantProductServiceImpl implements MerchantProductService {
         }
 
         Product savedProduct = productRepository.saveAndFlush(product);
-        searchSyncService.syncProduct(savedProduct);
         return UpdateProductResponse.builder()
                 .result(apiResultFactory.buildSuccess())
                 .data(toPayload(savedProduct))
@@ -212,7 +208,6 @@ public class MerchantProductServiceImpl implements MerchantProductService {
         product.setAvailable(false);
 
         Product savedProduct = productRepository.saveAndFlush(product);
-        searchSyncService.deleteProduct(savedProduct);
         return DeleteProductResponse.builder()
                 .result(apiResultFactory.buildSuccess())
                 .data(toPayload(savedProduct))
